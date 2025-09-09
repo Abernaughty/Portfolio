@@ -1,0 +1,135 @@
+# Azure DevOps CI/CD Pipeline for PokeData Infrastructure
+# This pipeline demonstrates enterprise-grade DevOps practices for Terraform deployments
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - IaC_Projects/Terraform/PokeData/**
+    exclude:
+      - IaC_Projects/Terraform/PokeData/memory-bank/**
+      - IaC_Projects/Terraform/PokeData/**/*.md
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - IaC_Projects/Terraform/PokeData/**
+    exclude:
+      - IaC_Projects/Terraform/PokeData/memory-bank/**
+      - IaC_Projects/Terraform/PokeData/**/*.md
+
+variables:
+  - group: terraform-common
+  - group: terraform-dev
+  - name: terraformVersion
+    value: '1.9.0'
+  - name: workingDirectory
+    value: '$(System.DefaultWorkingDirectory)/IaC_Projects/Terraform/PokeData/environments/dev'
+  - name: artifactName
+    value: 'terraform-plan'
+  - name: environment
+    value: 'dev'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+  # Stage 1: Validation and Security Scanning
+  - stage: Validate
+    displayName: 'Validate & Scan'
+    jobs:
+      - job: ValidateTerraform
+        displayName: 'Validate Terraform Configuration'
+        steps:
+          - template: templates/jobs/terraform-validate.yml
+            parameters:
+              workingDirectory: $(workingDirectory)
+              terraformVersion: $(terraformVersion)
+
+      - job: SecurityScan
+        displayName: 'Security Scanning'
+        dependsOn: ValidateTerraform
+        steps:
+          - template: templates/jobs/security-scan.yml
+            parameters:
+              workingDirectory: $(workingDirectory)
+
+  # Stage 2: Plan
+  - stage: Plan
+    displayName: 'Terraform Plan'
+    dependsOn: Validate
+    condition: succeeded()
+    jobs:
+      - job: TerraformPlan
+        displayName: 'Generate Terraform Plan'
+        steps:
+          - template: templates/jobs/terraform-plan.yml
+            parameters:
+              workingDirectory: $(workingDirectory)
+              terraformVersion: $(terraformVersion)
+              environment: $(environment)
+              artifactName: $(artifactName)
+
+  # Stage 3: Deploy (Only on main branch)
+  - stage: Deploy
+    displayName: 'Deploy to Dev'
+    dependsOn: Plan
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: DeployDev
+        displayName: 'Deploy Infrastructure to Dev'
+        environment: 'dev'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: templates/jobs/terraform-apply.yml
+                  parameters:
+                    workingDirectory: $(workingDirectory)
+                    terraformVersion: $(terraformVersion)
+                    environment: $(environment)
+                    artifactName: $(artifactName)
+
+  # Stage 4: Post-Deployment Tests
+  - stage: Test
+    displayName: 'Post-Deployment Tests'
+    dependsOn: Deploy
+    condition: succeeded()
+    jobs:
+      - job: InfrastructureTests
+        displayName: 'Run Infrastructure Tests'
+        steps:
+          - template: templates/jobs/infrastructure-tests.yml
+            parameters:
+              environment: $(environment)
+
+  # Stage 5: Notification
+  - stage: Notify
+    displayName: 'Send Notifications'
+    dependsOn: 
+      - Test
+    condition: always()
+    jobs:
+      - job: SendNotification
+        displayName: 'Pipeline Status Notification'
+        steps:
+          - task: SendEmail@1
+            displayName: 'Send Pipeline Status Email'
+            inputs:
+              To: 'mike@maber.io'
+              Subject: 'PokeData Pipeline - $(environment) - $(Build.SourceBranchName) - $(Agent.JobStatus)'
+              Body: |
+                Pipeline Status: $(Agent.JobStatus)
+                Environment: $(environment)
+                Build Number: $(Build.BuildNumber)
+                Commit: $(Build.SourceVersion)
+                Triggered By: $(Build.RequestedFor)
+                
+                View Pipeline: $(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
+              SmtpServer: 'smtp.office365.com'
+              SmtpPort: '587'

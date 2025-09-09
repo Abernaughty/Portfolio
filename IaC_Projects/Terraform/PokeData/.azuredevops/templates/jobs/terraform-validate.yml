@@ -1,0 +1,47 @@
+# Template for Terraform validation
+parameters:
+  - name: workingDirectory
+    type: string
+  - name: terraformVersion
+    type: string
+
+steps:
+  - task: TerraformInstaller@0
+    displayName: 'Install Terraform ${{ parameters.terraformVersion }}'
+    inputs:
+      terraformVersion: '${{ parameters.terraformVersion }}'
+
+  - task: TerraformTaskV4@4
+    displayName: 'Terraform Init'
+    inputs:
+      provider: 'azurerm'
+      command: 'init'
+      workingDirectory: '${{ parameters.workingDirectory }}'
+      backendServiceArm: 'Azure-Service-Connection'
+      backendAzureRmResourceGroupName: 'tfstate-rg'
+      backendAzureRmStorageAccountName: 'tfstateyul4ts'
+      backendAzureRmContainerName: 'tfstate'
+      backendAzureRmKey: 'pokedata/dev.tfstate'
+
+  - task: TerraformTaskV4@4
+    displayName: 'Terraform Format Check'
+    inputs:
+      provider: 'azurerm'
+      command: 'custom'
+      customCommand: 'fmt'
+      commandOptions: '-check -recursive'
+      workingDirectory: '${{ parameters.workingDirectory }}'
+      outputTo: 'console'
+    continueOnError: true
+
+  - task: TerraformTaskV4@4
+    displayName: 'Terraform Validate'
+    inputs:
+      provider: 'azurerm'
+      command: 'validate'
+      workingDirectory: '${{ parameters.workingDirectory }}'
+
+  - script: |
+      echo "##vso[task.setvariable variable=validation_complete]true"
+      echo "✅ Terraform validation completed successfully"
+    displayName: 'Set Validation Status'

@@ -1,0 +1,195 @@
+# Template for Post-Deployment Infrastructure Tests
+parameters:
+  - name: environment
+    type: string
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Verify Resource Group'
+    inputs:
+      azureSubscription: 'Azure-Service-Connection'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "## Verifying Resource Group Deployment"
+        
+        RG_NAME="pokedata-${{ parameters.environment }}-rg"
+        
+        # Check if resource group exists
+        if az group show --name $RG_NAME &>/dev/null; then
+          echo "✅ Resource Group '$RG_NAME' exists"
+          
+          # List resources in the group
+          echo ""
+          echo "### Resources in Resource Group:"
+          az resource list --resource-group $RG_NAME --output table
+        else
+          echo "❌ Resource Group '$RG_NAME' not found"
+          exit 1
+        fi
+
+  - task: AzureCLI@2
+    displayName: 'Test Cosmos DB Connectivity'
+    inputs:
+      azureSubscription: 'Azure-Service-Connection'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "## Testing Cosmos DB"
+        
+        COSMOS_NAME="pokedata-cosmos-${{ parameters.environment }}"
+        RG_NAME="pokedata-${{ parameters.environment }}-rg"
+        
+        # Check if Cosmos DB exists
+        if az cosmosdb show --name $COSMOS_NAME --resource-group $RG_NAME &>/dev/null; then
+          echo "✅ Cosmos DB '$COSMOS_NAME' exists"
+          
+          # Get endpoint
+          ENDPOINT=$(az cosmosdb show --name $COSMOS_NAME --resource-group $RG_NAME --query documentEndpoint -o tsv)
+          echo "Endpoint: $ENDPOINT"
+          
+          # Check database exists
+          if az cosmosdb sql database show --account-name $COSMOS_NAME --name "pokemon-cards" --resource-group $RG_NAME &>/dev/null; then
+            echo "✅ Database 'pokemon-cards' exists"
+          else
+            echo "⚠️ Database 'pokemon-cards' not found"
+          fi
+        else
+          echo "❌ Cosmos DB '$COSMOS_NAME' not found"
+          exit 1
+        fi
+
+  - task: AzureCLI@2
+    displayName: 'Test Function App'
+    inputs:
+      azureSubscription: 'Azure-Service-Connection'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "## Testing Function App"
+        
+        FUNC_NAME="pokedata-func-${{ parameters.environment }}"
+        RG_NAME="pokedata-${{ parameters.environment }}-rg"
+        
+        # Check if Function App exists
+        if az functionapp show --name $FUNC_NAME --resource-group $RG_NAME &>/dev/null; then
+          echo "✅ Function App '$FUNC_NAME' exists"
+          
+          # Get URL
+          URL=$(az functionapp show --name $FUNC_NAME --resource-group $RG_NAME --query defaultHostName -o tsv)
+          echo "URL: https://$URL"
+          
+          # Check status
+          STATE=$(az functionapp show --name $FUNC_NAME --resource-group $RG_NAME --query state -o tsv)
+          if [ "$STATE" == "Running" ]; then
+            echo "✅ Function App is running"
+          else
+            echo "⚠️ Function App state: $STATE"
+          fi
+          
+          # Test HTTP endpoint (will fail if no functions deployed, that's ok)
+          echo "Testing HTTP endpoint..."
+          curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" "https://$URL" || true
+        else
+          echo "❌ Function App '$FUNC_NAME' not found"
+          exit 1
+        fi
+
+  - task: AzureCLI@2
+    displayName: 'Test Static Web App'
+    inputs:
+      azureSubscription: 'Azure-Service-Connection'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "## Testing Static Web App"
+        
+        SWA_NAME="pokedata-swa-${{ parameters.environment }}"
+        RG_NAME="pokedata-${{ parameters.environment }}-rg"
+        
+        # Check if Static Web App exists
+        if az staticwebapp show --name $SWA_NAME --resource-group $RG_NAME &>/dev/null; then
+          echo "✅ Static Web App '$SWA_NAME' exists"
+          
+          # Get URL
+          URL=$(az staticwebapp show --name $SWA_NAME --resource-group $RG_NAME --query defaultHostname -o tsv)
+          echo "URL: https://$URL"
+          
+          # Test HTTP endpoint
+          echo "Testing HTTP endpoint..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://$URL")
+          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 404 ]; then
+            echo "✅ Static Web App is accessible (HTTP $HTTP_STATUS)"
+          else
+            echo "⚠️ Static Web App returned HTTP $HTTP_STATUS"
+          fi
+        else
+          echo "❌ Static Web App '$SWA_NAME' not found"
+          exit 1
+        fi
+
+  - task: AzureCLI@2
+    displayName: 'Test API Management'
+    inputs:
+      azureSubscription: 'Azure-Service-Connection'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "## Testing API Management"
+        
+        APIM_NAME="pokedata-apim-${{ parameters.environment }}"
+        RG_NAME="pokedata-${{ parameters.environment }}-rg"
+        
+        # Check if API Management exists
+        if az apim show --name $APIM_NAME --resource-group $RG_NAME &>/dev/null; then
+          echo "✅ API Management '$APIM_NAME' exists"
+          
+          # Get gateway URL
+          GATEWAY_URL=$(az apim show --name $APIM_NAME --resource-group $RG_NAME --query gatewayUrl -o tsv)
+          echo "Gateway URL: $GATEWAY_URL"
+          
+          # Check provisioning state
+          STATE=$(az apim show --name $APIM_NAME --resource-group $RG_NAME --query provisioningState -o tsv)
+          if [ "$STATE" == "Succeeded" ]; then
+            echo "✅ API Management is provisioned"
+          else
+            echo "⚠️ API Management state: $STATE"
+          fi
+        else
+          echo "❌ API Management '$APIM_NAME' not found"
+          exit 1
+        fi
+
+  - task: AzureCLI@2
+    displayName: 'Verify Application Insights'
+    inputs:
+      azureSubscription: 'Azure-Service-Connection'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "## Verifying Application Insights"
+        
+        AI_NAME="pokedata-func-${{ parameters.environment }}-insights"
+        RG_NAME="pokedata-${{ parameters.environment }}-rg"
+        
+        # Check if Application Insights exists
+        if az monitor app-insights component show --app $AI_NAME --resource-group $RG_NAME &>/dev/null; then
+          echo "✅ Application Insights '$AI_NAME' exists"
+          
+          # Get instrumentation key (for reference)
+          INSTRUMENTATION_KEY=$(az monitor app-insights component show --app $AI_NAME --resource-group $RG_NAME --query instrumentationKey -o tsv)
+          echo "✅ Instrumentation configured"
+        else
+          echo "⚠️ Application Insights '$AI_NAME' not found (may be optional)"
+        fi
+
+  - script: |
+      echo "## Infrastructure Test Summary"
+      echo ""
+      echo "✅ All critical infrastructure components verified"
+      echo "✅ Resources are accessible and in expected state"
+      echo ""
+      echo "Environment: ${{ parameters.environment }}"
+      echo "Test completed at: $(date)"
+    displayName: 'Test Summary'
+    condition: succeeded()

@@ -1,0 +1,72 @@
+# Template for Security Scanning with tfsec and checkov
+parameters:
+  - name: workingDirectory
+    type: string
+
+steps:
+  - script: |
+      echo "Installing tfsec..."
+      curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+      sudo mv tfsec /usr/local/bin/
+      tfsec --version
+    displayName: 'Install tfsec'
+
+  - script: |
+      echo "Running tfsec security scan..."
+      tfsec ${{ parameters.workingDirectory }} \
+        --format json \
+        --out tfsec-results.json \
+        --soft-fail || true
+      
+      # Also run with default format for console output
+      tfsec ${{ parameters.workingDirectory }} \
+        --soft-fail || true
+    displayName: 'Run tfsec Security Scan'
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish tfsec Results'
+    inputs:
+      pathToPublish: '$(System.DefaultWorkingDirectory)/tfsec-results.json'
+      artifactName: 'security-scan-results'
+      publishLocation: 'Container'
+    condition: always()
+
+  - script: |
+      echo "Installing Checkov..."
+      pip3 install checkov
+      checkov --version
+    displayName: 'Install Checkov'
+
+  - script: |
+      echo "Running Checkov compliance scan..."
+      checkov -d ${{ parameters.workingDirectory }} \
+        --framework terraform \
+        --output json \
+        --file-output checkov-results.json \
+        --soft-fail || true
+      
+      # Also run with console output
+      checkov -d ${{ parameters.workingDirectory }} \
+        --framework terraform \
+        --compact \
+        --soft-fail || true
+    displayName: 'Run Checkov Compliance Scan'
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Checkov Results'
+    inputs:
+      pathToPublish: '$(System.DefaultWorkingDirectory)/checkov-results.json'
+      artifactName: 'compliance-scan-results'
+      publishLocation: 'Container'
+    condition: always()
+
+  - script: |
+      echo "## Security Scan Summary"
+      echo "✅ tfsec scan completed"
+      echo "✅ Checkov scan completed"
+      echo ""
+      echo "Results have been published as build artifacts"
+      echo "Review the security findings before proceeding with deployment"
+    displayName: 'Security Scan Summary'

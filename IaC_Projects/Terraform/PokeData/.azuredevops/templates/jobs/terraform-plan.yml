@@ -1,0 +1,115 @@
+# Template for Terraform Plan generation
+parameters:
+  - name: workingDirectory
+    type: string
+  - name: terraformVersion
+    type: string
+  - name: environment
+    type: string
+  - name: artifactName
+    type: string
+
+steps:
+  - task: TerraformInstaller@0
+    displayName: 'Install Terraform ${{ parameters.terraformVersion }}'
+    inputs:
+      terraformVersion: '${{ parameters.terraformVersion }}'
+
+  - task: TerraformTaskV4@4
+    displayName: 'Terraform Init'
+    inputs:
+      provider: 'azurerm'
+      command: 'init'
+      workingDirectory: '${{ parameters.workingDirectory }}'
+      backendServiceArm: 'Azure-Service-Connection'
+      backendAzureRmResourceGroupName: 'tfstate-rg'
+      backendAzureRmStorageAccountName: 'tfstateyul4ts'
+      backendAzureRmContainerName: 'tfstate'
+      backendAzureRmKey: 'pokedata/${{ parameters.environment }}.tfstate'
+
+  - task: TerraformTaskV4@4
+    displayName: 'Terraform Plan'
+    inputs:
+      provider: 'azurerm'
+      command: 'plan'
+      workingDirectory: '${{ parameters.workingDirectory }}'
+      commandOptions: '-out=tfplan -input=false'
+      environmentServiceNameAzureRM: 'Azure-Service-Connection'
+      publishPlanResults: 'tfplan-${{ parameters.environment }}'
+
+  - script: |
+      # Generate human-readable plan output
+      terraform show -no-color tfplan > tfplan.txt
+      
+      # Generate JSON output for parsing
+      terraform show -json tfplan > tfplan.json
+      
+      # Create a summary
+      echo "## Terraform Plan Summary for ${{ parameters.environment }}" > plan-summary.md
+      echo "" >> plan-summary.md
+      echo "**Environment:** ${{ parameters.environment }}" >> plan-summary.md
+      echo "**Build:** $(Build.BuildNumber)" >> plan-summary.md
+      echo "**Triggered by:** $(Build.RequestedFor)" >> plan-summary.md
+      echo "" >> plan-summary.md
+      
+      # Parse the plan for resource changes
+      echo "### Resource Changes:" >> plan-summary.md
+      terraform show tfplan | grep -E "will be|must be" | head -20 >> plan-summary.md || true
+      
+      echo "" >> plan-summary.md
+      echo "Full plan has been saved as an artifact." >> plan-summary.md
+      
+      cat plan-summary.md
+    displayName: 'Generate Plan Summary'
+    workingDirectory: '${{ parameters.workingDirectory }}'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Terraform Plan'
+    inputs:
+      pathToPublish: '${{ parameters.workingDirectory }}/tfplan'
+      artifactName: '${{ parameters.artifactName }}'
+      publishLocation: 'Container'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Plan Output'
+    inputs:
+      pathToPublish: '${{ parameters.workingDirectory }}/tfplan.txt'
+      artifactName: 'plan-output-${{ parameters.environment }}'
+      publishLocation: 'Container'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Plan JSON'
+    inputs:
+      pathToPublish: '${{ parameters.workingDirectory }}/tfplan.json'
+      artifactName: 'plan-json-${{ parameters.environment }}'
+      publishLocation: 'Container'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Plan Summary'
+    inputs:
+      pathToPublish: '${{ parameters.workingDirectory }}/plan-summary.md'
+      artifactName: 'plan-summary-${{ parameters.environment }}'
+      publishLocation: 'Container'
+
+  # Post plan summary as PR comment if this is a PR build
+  - task: GitHubComment@0
+    displayName: 'Post Plan to PR'
+    condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
+    inputs:
+      gitHubConnection: 'GitHub-Service-Connection'
+      repositoryName: '$(Build.Repository.Name)'
+      comment: |
+        ## Terraform Plan Results - ${{ parameters.environment }}
+        
+        Build: $(Build.BuildNumber)
+        
+        The Terraform plan has been generated and saved. 
+        Please review the plan artifacts for detailed changes.
+        
+        [View Full Plan]($(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)&view=artifacts)
+    continueOnError: true
+
+  - script: |
+      echo "✅ Terraform plan completed successfully"
+      echo "Plan has been saved and will be used in the apply stage"
+    displayName: 'Plan Complete'
