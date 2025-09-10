@@ -62,22 +62,22 @@ steps:
         $ErrorActionPreference = 'Stop'
         Write-Host "## Testing Function App"
 
-        $RG_NAME = "pokedata-${{ parameters.environment }}-rg"
+        $RG_NAME  = "pokedata-${{ parameters.environment }}-rg"
         $FUNC_NAME = "pokedata-func-${{ parameters.environment }}"
 
         az functionapp show --name $FUNC_NAME --resource-group $RG_NAME | Out-Null
         if ($LASTEXITCODE -ne 0) { throw "Function App '$FUNC_NAME' not found." }
         Write-Host "✅ Function App '$FUNC_NAME' exists"
 
-        $HOST = (az functionapp show --name $FUNC_NAME --resource-group $RG_NAME --query defaultHostName -o tsv).Trim()
-        Write-Host "URL: https://$HOST"
+        $funcHost = (az functionapp show --name $FUNC_NAME --resource-group $RG_NAME --query defaultHostName -o tsv).Trim()
+        Write-Host "URL: https://$funcHost"
 
-        $STATE = (az functionapp show --name $FUNC_NAME --resource-group $RG_NAME --query state -o tsv).Trim()
-        if ($STATE -eq 'Running') { Write-Host "✅ Function App is running" } else { Write-Host "⚠️ Function App state: $STATE" }
+        $state = (az functionapp show --name $FUNC_NAME --resource-group $RG_NAME --query state -o tsv).Trim()
+        if ($state -eq 'Running') { Write-Host "✅ Function App is running" } else { Write-Host "⚠️ Function App state: $state" }
 
         Write-Host "Testing HTTP endpoint..."
         try {
-          $resp = Invoke-WebRequest -Uri ("https://$HOST") -Method Head -MaximumRedirection 5 -TimeoutSec 15
+          $resp = Invoke-WebRequest -Uri ("https://$funcHost") -Method Head -MaximumRedirection 5 -TimeoutSec 15
           Write-Host ("HTTP Status: " + [int]$resp.StatusCode)
         } catch {
           Write-Host ("HTTP request failed: " + $_.Exception.Message)
@@ -93,19 +93,19 @@ steps:
         $ErrorActionPreference = 'Stop'
         Write-Host "## Testing Static Web App"
 
-        $RG_NAME = "pokedata-${{ parameters.environment }}-rg"
+        $RG_NAME  = "pokedata-${{ parameters.environment }}-rg"
         $SWA_NAME = "pokedata-swa-${{ parameters.environment }}"
 
         az staticwebapp show --name $SWA_NAME --resource-group $RG_NAME | Out-Null
         if ($LASTEXITCODE -ne 0) { throw "Static Web App '$SWA_NAME' not found." }
         Write-Host "✅ Static Web App '$SWA_NAME' exists"
 
-        $HOST = (az staticwebapp show --name $SWA_NAME --resource-group $RG_NAME --query defaultHostname -o tsv).Trim()
-        Write-Host "URL: https://$HOST"
+        $swaHost = (az staticwebapp show --name $SWA_NAME --resource-group $RG_NAME --query defaultHostname -o tsv).Trim()
+        Write-Host "URL: https://$swaHost"
 
         Write-Host "Testing HTTP endpoint..."
         try {
-          $resp = Invoke-WebRequest -Uri ("https://$HOST") -Method Head -MaximumRedirection 5 -TimeoutSec 15
+          $resp = Invoke-WebRequest -Uri ("https://$swaHost") -Method Head -MaximumRedirection 5 -TimeoutSec 15
           $code = [int]$resp.StatusCode
           if ($code -eq 200 -or $code -eq 404) {
             Write-Host "✅ Static Web App is accessible (HTTP $code)"
