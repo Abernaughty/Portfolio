@@ -43,12 +43,6 @@ variable "github_branch" {
   default     = "main"
 }
 
-variable "repository_url" {
-  description = "GitHub repository URL for Static Web App deployment"
-  type        = string
-  default     = "https://github.com/Abernaughty/PokeData"
-}
-
 variable "repository_token" {
   description = "GitHub personal access token for Static Web App deployment"
   type        = string
