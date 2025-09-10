@@ -47,7 +47,6 @@ variable "repository_token" {
   description = "GitHub personal access token for Static Web App deployment"
   type        = string
   sensitive   = true
-  default     = "" # Will be provided via environment variable or tfvars
 }
 
 # API Management Configuration

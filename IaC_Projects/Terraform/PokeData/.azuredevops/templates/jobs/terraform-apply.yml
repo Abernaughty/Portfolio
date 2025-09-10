@@ -33,6 +33,19 @@ steps:
     env:
       TF_VAR_repository_token: $(github_token)   # secret from variable group / Key Vault
 
+  - task: PowerShell@2
+    displayName: 'Validate GitHub PAT mapping'
+    inputs:
+      targetType: inline
+      script: |
+        if (-not $env:TF_VAR_repository_token) { throw "TF_VAR_repository_token is empty" }
+        $headers = @{ Authorization = "token $($env:TF_VAR_repository_token)"; "User-Agent"="ado" }
+        $repo = "https://api.github.com/repos/Abernaughty/PokeData"
+        $resp = Invoke-WebRequest -Uri $repo -Headers $headers -UseBasicParsing -Method GET -ErrorAction Stop
+        $data = $resp.Content | ConvertFrom-Json
+        if (-not $data.permissions.admin) { throw "PAT owner is not an admin on the repo." }
+        Write-Host "PAT can access the repo and is admin."
+
   # Pull the saved plan artifact produced in the Plan stage
   - task: DownloadBuildArtifacts@1
     displayName: 'Download Terraform Plan'
