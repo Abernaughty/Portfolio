@@ -3,6 +3,11 @@
 # -----------------------------------------------------------------------------
 
 locals {
+  default_cors_origins = [
+    "https://functions.azure.com",
+    "https://functions-staging.azure.com",
+  ]
+  merged_cors_origins = distinct(concat(local.default_cors_origins, var.cors_allowed_origins))
   # Merge default tags with user-provided tags
   common_tags = merge(
     {
@@ -165,12 +170,9 @@ resource "azurerm_windows_function_app" "this" {
     use_32_bit_worker      = var.sku_name == "Y1" || var.sku_name == "F1"
     vnet_route_all_enabled = var.virtual_network_subnet_id != null
     cors {
-      allowed_origins     = [
-        "https://functions.azure.com",
-        "https://functions-staging.azure.com",
-      ]
-      support_credentials = false
-    }
+      allowed_origins     = local.merged_cors_origins
+      support_credentials = var.cors_support_credentials
+      }
 
     # Scaling
     app_scale_limit           = var.app_scale_limit
@@ -199,15 +201,6 @@ resource "azurerm_windows_function_app" "this" {
         node_version                = null
         powershell_core_version     = null
         use_custom_runtime          = null
-      }
-    }
-
-    # CORS configuration
-    dynamic "cors" {
-      for_each = length(var.cors_allowed_origins) > 0 ? [1] : []
-      content {
-        allowed_origins     = var.cors_allowed_origins
-        support_credentials = var.cors_support_credentials
       }
     }
 
@@ -284,11 +277,8 @@ resource "azurerm_linux_function_app" "this" {
     websockets_enabled     = false
     vnet_route_all_enabled = var.virtual_network_subnet_id != null
     cors {
-      allowed_origins     = [
-        "https://functions.azure.com",
-        "https://functions-staging.azure.com",
-      ]
-      support_credentials = false
+      allowed_origins     = local.merged_cors_origins
+      support_credentials = var.cors_support_credentials
     }
 
     # Scaling
@@ -318,15 +308,6 @@ resource "azurerm_linux_function_app" "this" {
         python_version          = null
         powershell_core_version = null
         use_custom_runtime      = null
-      }
-    }
-
-    # CORS configuration
-    dynamic "cors" {
-      for_each = length(var.cors_allowed_origins) > 0 ? [1] : []
-      content {
-        allowed_origins     = var.cors_allowed_origins
-        support_credentials = var.cors_support_credentials
       }
     }
 
