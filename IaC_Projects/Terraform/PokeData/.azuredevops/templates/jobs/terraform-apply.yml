@@ -61,7 +61,6 @@ steps:
         if (-not (Test-Path $dst)) { throw "Failed to copy plan to $dst" }
         Write-Host "✅ Terraform plan file restored at $dst"
 
-
   # Apply the exact plan reviewed earlier (no -var-file here)
   - task: TerraformTaskV4@4
     displayName: 'Terraform Apply'
@@ -77,34 +76,33 @@ steps:
   # Produce a quick, human-readable summary and capture outputs
   - task: PowerShell@2
     displayName: 'Generate Deployment Summary'
-    workingDirectory: '${{ parameters.workingDirectory }}'
     env:
       TF_VAR_repository_token: $(github_token)
     inputs:
       targetType: inline
+      workingDirectory: '${{ parameters.workingDirectory }}'
       script: |
+        $ErrorActionPreference = 'Stop'
         $env:TF_IN_AUTOMATION = "true"
+
         $file = "deployment-summary.md"
+        $lines = @()
+        $lines += "## Deployment Summary for ${{ parameters.environment }}"
+        $lines += ""
+        $lines += "**Environment:** ${{ parameters.environment }}"
+        $lines += "**Build:** $(Build.BuildNumber)"
+        $lines += "**Deployed by:** $(Build.RequestedFor)"
+        $lines += "**Deployment Time:** $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss zzz')"
+        $lines += ""
+        $lines += "### Terraform Outputs:"
+        Set-Content -Path $file -Value $lines -Encoding utf8
 
-        @"
-  ## Deployment Summary for ${{ parameters.environment }}
-
-  **Environment:** ${{ parameters.environment }}
-  **Build:** $(Build.BuildNumber)
-  **Deployed by:** $(Build.RequestedFor)
-  **Deployment Time:** $(Get-Date -Format "yyyy-MM-dd HH:mm:ss zzz")
-
-  ### Terraform Outputs:
-  "@ | Out-File -FilePath $file -Encoding utf8
-
-        # Write outputs to files
         terraform output -json | Out-File -FilePath "outputs.json" -Encoding utf8
-        terraform output | Out-File -FilePath $file -Append -Encoding utf8
+        terraform output       | Out-File -FilePath $file -Append -Encoding utf8
 
         Add-Content -Path $file -Value ""
         Add-Content -Path $file -Value "✅ Infrastructure successfully deployed to ${{ parameters.environment }}"
 
-        # Show the summary
         Get-Content $file | Write-Host
 
   - task: PublishBuildArtifacts@1
