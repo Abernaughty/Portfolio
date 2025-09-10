@@ -164,6 +164,13 @@ resource "azurerm_windows_function_app" "this" {
     websockets_enabled     = false
     use_32_bit_worker      = var.sku_name == "Y1" || var.sku_name == "F1"
     vnet_route_all_enabled = var.virtual_network_subnet_id != null
+    cors {
+      allowed_origins     = [
+        "https://functions.azure.com",
+        "https://functions-staging.azure.com",
+      ]
+      support_credentials = false
+    }
 
     # Scaling
     app_scale_limit           = var.app_scale_limit
@@ -276,6 +283,13 @@ resource "azurerm_linux_function_app" "this" {
     http2_enabled          = true
     websockets_enabled     = false
     vnet_route_all_enabled = var.virtual_network_subnet_id != null
+    cors {
+      allowed_origins     = [
+        "https://functions.azure.com",
+        "https://functions-staging.azure.com",
+      ]
+      support_credentials = false
+    }
 
     # Scaling
     app_scale_limit           = var.app_scale_limit
