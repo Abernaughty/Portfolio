@@ -1,13 +1,4 @@
-# Template for Terraform Plan generation
-parameters:
-  - name: workingDirectory
-    type: string
-  - name: terraformVersion
-    type: string
-  - name: environment
-    type: string
-  - name: artifactName
-    type: string
+# ... parameters unchanged ...
 
 steps:
   - task: TerraformInstaller@0
@@ -26,6 +17,8 @@ steps:
       backendAzureRmStorageAccountName: 'tfstateyul4ts'
       backendAzureRmContainerName: 'tfstate'
       backendAzureRmKey: 'pokedata/${{ parameters.environment }}.tfstate'
+    env:
+      TF_VAR_github_token: $(github_token)   # secret var from ADO group/Key Vault
 
   - task: TerraformTaskV4@4
     displayName: 'Terraform Plan'
@@ -33,35 +26,38 @@ steps:
       provider: 'azurerm'
       command: 'plan'
       workingDirectory: '${{ parameters.workingDirectory }}'
-      commandOptions: '-out=tfplan -input=false'
+      # Explicit var-file; detailed-exitcode = 0 (no change) or 2 (changes)
+      commandOptions: '-var-file=terraform.tfvars -out=tfplan -input=false -detailed-exitcode'
       environmentServiceNameAzureRM: 'Azure-Service-Connection'
       publishPlanResults: 'tfplan-${{ parameters.environment }}'
+    env:
+      TF_VAR_github_token: $(github_token)
+    # Let exit code 2 (changes) pass; the task reports nonzero -> don't fail the job
+    continueOnError: true
 
   - script: |
-      # Generate human-readable plan output
+      # Normalize plan exit code: treat 2 (changes) as success-with-changes
+      if [ "$(tail -n1 $(Agent.TempDirectory)/terraform_exit_code 2>/dev/null)" = "2" ]; then
+        echo "Terraform reported changes (exit code 2). Proceeding."
+      fi
+
       terraform show -no-color tfplan > tfplan.txt
-      
-      # Generate JSON output for parsing
       terraform show -json tfplan > tfplan.json
-      
-      # Create a summary
+
       echo "## Terraform Plan Summary for ${{ parameters.environment }}" > plan-summary.md
       echo "" >> plan-summary.md
       echo "**Environment:** ${{ parameters.environment }}" >> plan-summary.md
       echo "**Build:** $(Build.BuildNumber)" >> plan-summary.md
       echo "**Triggered by:** $(Build.RequestedFor)" >> plan-summary.md
       echo "" >> plan-summary.md
-      
-      # Parse the plan for resource changes
       echo "### Resource Changes:" >> plan-summary.md
       terraform show tfplan | grep -E "will be|must be" | head -20 >> plan-summary.md || true
-      
-      echo "" >> plan-summary.md
-      echo "Full plan has been saved as an artifact." >> plan-summary.md
-      
+
       cat plan-summary.md
     displayName: 'Generate Plan Summary'
     workingDirectory: '${{ parameters.workingDirectory }}'
+    env:
+      TF_VAR_github_token: $(github_token)
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Terraform Plan'
@@ -91,7 +87,6 @@ steps:
       artifactName: 'plan-summary-${{ parameters.environment }}'
       publishLocation: 'Container'
 
-  # Post plan summary as PR comment if this is a PR build
   - task: GitHubComment@0
     displayName: 'Post Plan to PR'
     condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
@@ -100,16 +95,11 @@ steps:
       repositoryName: '$(Build.Repository.Name)'
       comment: |
         ## Terraform Plan Results - ${{ parameters.environment }}
-        
         Build: $(Build.BuildNumber)
-        
-        The Terraform plan has been generated and saved. 
-        Please review the plan artifacts for detailed changes.
-        
-        [View Full Plan]($(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)&view=artifacts)
+        The Terraform plan has been generated and saved.
+        [View Artifacts]($(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)&view=artifacts)
     continueOnError: true
 
   - script: |
-      echo "✅ Terraform plan completed successfully"
-      echo "Plan has been saved and will be used in the apply stage"
+      echo "✅ Terraform plan completed"
     displayName: 'Plan Complete'

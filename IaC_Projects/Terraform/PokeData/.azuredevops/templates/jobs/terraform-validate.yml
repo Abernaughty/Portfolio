@@ -11,35 +11,25 @@ steps:
     inputs:
       terraformVersion: '${{ parameters.terraformVersion }}'
 
-  - task: TerraformTaskV4@4
-    displayName: 'Terraform Init'
-    inputs:
-      provider: 'azurerm'
-      command: 'init'
-      workingDirectory: '${{ parameters.workingDirectory }}'
-      backendServiceArm: 'Azure-Service-Connection'
-      backendAzureRmResourceGroupName: 'tfstate-rg'
-      backendAzureRmStorageAccountName: 'tfstateyul4ts'
-      backendAzureRmContainerName: 'tfstate'
-      backendAzureRmKey: 'pokedata/dev.tfstate'
+  # Style/format check
+  - script: |
+      terraform fmt -check -recursive
+    displayName: 'Terraform fmt (check)'
+    workingDirectory: '${{ parameters.workingDirectory }}'
 
-  - task: TerraformTaskV4@4
-    displayName: 'Terraform Format Check'
-    inputs:
-      provider: 'azurerm'
-      command: 'custom'
-      customCommand: 'fmt'
-      commandOptions: '-check -recursive'
-      workingDirectory: '${{ parameters.workingDirectory }}'
-      outputTo: 'console'
-    continueOnError: true
+  # Safe init for validation only (no backend access)
+  - script: |
+      terraform init -backend=false -input=false -upgrade
+    displayName: 'Terraform init (no backend)'
+    workingDirectory: '${{ parameters.workingDirectory }}'
+    env:
+      TF_VAR_github_token: $(github_token)
 
-  - task: TerraformTaskV4@4
-    displayName: 'Terraform Validate'
-    inputs:
-      provider: 'azurerm'
-      command: 'validate'
-      workingDirectory: '${{ parameters.workingDirectory }}'
+  # Validate configuration
+  - script: |
+      terraform validate -no-color
+    displayName: 'Terraform validate'
+    workingDirectory: '${{ parameters.workingDirectory }}'
 
   - script: |
       echo "##vso[task.setvariable variable=validation_complete]true"

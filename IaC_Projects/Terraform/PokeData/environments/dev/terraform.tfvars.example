@@ -13,7 +13,7 @@ cost_center = "Development"
 # GitHub Configuration (for Static Web App)
 github_repository_url = "https://github.com/Abernaughty/PokeData"
 github_branch        = "main"
-github_token         = "ghp_xxxxxxxxxxxxxxxxxxxx"  # Your GitHub PAT with repo permissions
+github_token         = ""  # Set via environment variable or secret management
 
 # API Management
 apim_publisher_name  = "PokeData Development Team"

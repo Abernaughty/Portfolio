@@ -13,21 +13,14 @@ steps:
   - checkout: self
     persistCredentials: true
 
-  - task: DownloadBuildArtifacts@0
-    displayName: 'Download Terraform Plan'
-    inputs:
-      buildType: 'current'
-      downloadType: 'single'
-      artifactName: '${{ parameters.artifactName }}'
-      downloadPath: '$(System.ArtifactsDirectory)'
-
   - task: TerraformInstaller@0
     displayName: 'Install Terraform ${{ parameters.terraformVersion }}'
     inputs:
       terraformVersion: '${{ parameters.terraformVersion }}'
 
+  # Re-init so provider plugins/backends exist in this fresh job workspace
   - task: TerraformTaskV4@4
-    displayName: 'Terraform Init'
+    displayName: 'Terraform Init (Apply)'
     inputs:
       provider: 'azurerm'
       command: 'init'
@@ -37,22 +30,41 @@ steps:
       backendAzureRmStorageAccountName: 'tfstateyul4ts'
       backendAzureRmContainerName: 'tfstate'
       backendAzureRmKey: 'pokedata/${{ parameters.environment }}.tfstate'
+    env:
+      TF_VAR_github_token: $(github_token)   # secret from variable group / Key Vault
 
+  # Pull the saved plan artifact produced in the Plan stage
+  - task: DownloadBuildArtifacts@1
+    displayName: 'Download Terraform Plan'
+    inputs:
+      buildType: 'current'
+      downloadType: 'single'
+      artifactName: '${{ parameters.artifactName }}'
+      downloadPath: '$(Agent.TempDirectory)'
+
+  # Place tfplan next to the code for a simple relative apply
   - script: |
-      # Copy the plan file from artifacts to working directory
-      cp $(System.ArtifactsDirectory)/${{ parameters.artifactName }}/tfplan ${{ parameters.workingDirectory }}/tfplan
+      set -e
+      SRC="$(Agent.TempDirectory)/${{ parameters.artifactName }}/tfplan"
+      DST="${{ parameters.workingDirectory }}/tfplan"
+      echo "Copying plan: $SRC -> $DST"
+      cp "$SRC" "$DST"
       echo "✅ Terraform plan file restored"
     displayName: 'Restore Plan File'
 
+  # Apply the exact plan reviewed earlier (no -var-file here)
   - task: TerraformTaskV4@4
     displayName: 'Terraform Apply'
     inputs:
       provider: 'azurerm'
       command: 'apply'
       workingDirectory: '${{ parameters.workingDirectory }}'
-      commandOptions: 'tfplan'
+      commandOptions: '-input=false -auto-approve tfplan'
       environmentServiceNameAzureRM: 'Azure-Service-Connection'
+    env:
+      TF_VAR_github_token: $(github_token)
 
+  # Produce a quick, human-readable summary and capture outputs
   - script: |
       echo "## Deployment Summary for ${{ parameters.environment }}" > deployment-summary.md
       echo "" >> deployment-summary.md
@@ -61,18 +73,16 @@ steps:
       echo "**Deployed by:** $(Build.RequestedFor)" >> deployment-summary.md
       echo "**Deployment Time:** $(date)" >> deployment-summary.md
       echo "" >> deployment-summary.md
-      
-      # Get outputs
       echo "### Terraform Outputs:" >> deployment-summary.md
       terraform output -json > outputs.json
       terraform output >> deployment-summary.md
-      
       echo "" >> deployment-summary.md
       echo "✅ Infrastructure successfully deployed to ${{ parameters.environment }}" >> deployment-summary.md
-      
       cat deployment-summary.md
     displayName: 'Generate Deployment Summary'
     workingDirectory: '${{ parameters.workingDirectory }}'
+    env:
+      TF_VAR_github_token: $(github_token)
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Deployment Summary'
@@ -88,17 +98,13 @@ steps:
       artifactName: 'terraform-outputs-${{ parameters.environment }}'
       publishLocation: 'Container'
 
+  # Optional git tag — keep if you like it
   - script: |
-      # Tag the deployment in git
       git config user.email "azure-pipeline@maber.io"
       git config user.name "Azure Pipeline"
-      
       TAG_NAME="${{ parameters.environment }}-$(Build.BuildNumber)"
       git tag -a "$TAG_NAME" -m "Deployed to ${{ parameters.environment }} by $(Build.RequestedFor)"
-      
-      # Push tag (will fail if no push permissions, that's ok)
       git push origin "$TAG_NAME" || echo "Could not push tag (no permissions)"
-      
       echo "✅ Deployment tagged as: $TAG_NAME"
     displayName: 'Tag Deployment'
     continueOnError: true
