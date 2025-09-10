@@ -17,22 +17,22 @@ locals {
   # Environment-specific configurations
   env_config = {
     dev = {
-      always_on              = false
-      min_instances          = 0
-      max_burst              = 10
-      health_check_enabled   = false
+      always_on            = false
+      min_instances        = 0
+      max_burst            = 10
+      health_check_enabled = false
     }
     staging = {
-      always_on              = false
-      min_instances          = 1
-      max_burst              = 50
-      health_check_enabled   = true
+      always_on            = false
+      min_instances        = 1
+      max_burst            = 50
+      health_check_enabled = true
     }
     prod = {
-      always_on              = var.sku_name != "Y1" # Not available for consumption
-      min_instances          = 2
-      max_burst              = 100
-      health_check_enabled   = true
+      always_on            = var.sku_name != "Y1" # Not available for consumption
+      min_instances        = 2
+      max_burst            = 100
+      health_check_enabled = true
     }
   }
 
@@ -43,10 +43,10 @@ locals {
 
   # Build app settings with defaults
   default_app_settings = {
-    "FUNCTIONS_WORKER_RUNTIME"       = var.runtime_stack.dotnet_version != null ? "dotnet" : (
-                                       var.runtime_stack.node_version != null ? "node" : (
-                                       var.runtime_stack.python_version != null ? "python" : (
-                                       var.runtime_stack.java_version != null ? "java" : "custom")))
+    "FUNCTIONS_WORKER_RUNTIME" = var.runtime_stack.dotnet_version != null ? "dotnet" : (
+      var.runtime_stack.node_version != null ? "node" : (
+        var.runtime_stack.python_version != null ? "python" : (
+    var.runtime_stack.java_version != null ? "java" : "custom")))
     "WEBSITE_RUN_FROM_PACKAGE"       = "1"
     "APPINSIGHTS_INSTRUMENTATIONKEY" = var.application_insights_key != null ? var.application_insights_key : ""
   }
@@ -126,14 +126,14 @@ resource "azurerm_windows_function_app" "this" {
   builtin_logging_enabled     = false
   enabled                     = true
 
-  https_only                               = var.https_only
-  public_network_access_enabled            = var.environment == "dev" ? true : true # Can be restricted in prod
-  client_certificate_enabled               = false
-  client_certificate_mode                  = "Required"
-  
+  https_only                    = var.https_only
+  public_network_access_enabled = var.environment == "dev" ? true : true # Can be restricted in prod
+  client_certificate_enabled    = false
+  client_certificate_mode       = "Required"
+
   # Authentication settings
-  ftp_publish_basic_authentication_enabled        = var.environment == "dev"
-  webdeploy_publish_basic_authentication_enabled  = var.environment == "dev"
+  ftp_publish_basic_authentication_enabled       = var.environment == "dev"
+  webdeploy_publish_basic_authentication_enabled = var.environment == "dev"
 
   # Virtual network integration
   virtual_network_subnet_id = var.virtual_network_subnet_id
@@ -143,7 +143,7 @@ resource "azurerm_windows_function_app" "this" {
     local.app_settings,
     var.application_insights_enabled ? {
       "APPINSIGHTS_INSTRUMENTATIONKEY"        = var.application_insights_key != null ? var.application_insights_key : azurerm_application_insights.this[0].instrumentation_key
-      "APPLICATIONINSIGHTS_CONNECTION_STRING"  = var.application_insights_connection_string != null ? var.application_insights_connection_string : azurerm_application_insights.this[0].connection_string
+      "APPLICATIONINSIGHTS_CONNECTION_STRING" = var.application_insights_connection_string != null ? var.application_insights_connection_string : azurerm_application_insights.this[0].connection_string
     } : {}
   )
 
@@ -157,22 +157,22 @@ resource "azurerm_windows_function_app" "this" {
   }
 
   site_config {
-    always_on                              = local.selected_config.always_on && var.sku_name != "Y1"
-    ftps_state                             = var.ftps_state
-    minimum_tls_version                    = var.minimum_tls_version
-    http2_enabled                          = true
-    websockets_enabled                     = false
-    use_32_bit_worker                      = var.sku_name == "Y1" || var.sku_name == "F1"
-    vnet_route_all_enabled                 = var.virtual_network_subnet_id != null
-    
+    always_on              = local.selected_config.always_on && var.sku_name != "Y1"
+    ftps_state             = var.ftps_state
+    minimum_tls_version    = var.minimum_tls_version
+    http2_enabled          = true
+    websockets_enabled     = false
+    use_32_bit_worker      = var.sku_name == "Y1" || var.sku_name == "F1"
+    vnet_route_all_enabled = var.virtual_network_subnet_id != null
+
     # Scaling
-    app_scale_limit                        = var.app_scale_limit
-    elastic_instance_minimum               = var.elastic_instance_minimum
-    pre_warmed_instance_count              = var.pre_warmed_instance_count
-    
+    app_scale_limit           = var.app_scale_limit
+    elastic_instance_minimum  = var.elastic_instance_minimum
+    pre_warmed_instance_count = var.pre_warmed_instance_count
+
     # Health check
-    health_check_path                      = local.selected_config.health_check_enabled ? "/api/health" : null
-    health_check_eviction_time_in_min      = local.selected_config.health_check_enabled ? 5 : null
+    health_check_path                 = local.selected_config.health_check_enabled ? "/api/health" : null
+    health_check_eviction_time_in_min = local.selected_config.health_check_enabled ? 5 : null
 
     # Application insights
     application_insights_connection_string = var.application_insights_enabled ? (
@@ -240,11 +240,11 @@ resource "azurerm_linux_function_app" "this" {
   builtin_logging_enabled     = false
   enabled                     = true
 
-  https_only                               = var.https_only
-  public_network_access_enabled            = var.environment == "dev" ? true : true
-  client_certificate_enabled               = false
-  client_certificate_mode                  = "Required"
-  
+  https_only                    = var.https_only
+  public_network_access_enabled = var.environment == "dev" ? true : true
+  client_certificate_enabled    = false
+  client_certificate_mode       = "Required"
+
   # Authentication settings
   ftp_publish_basic_authentication_enabled = var.environment == "dev"
 
@@ -256,7 +256,7 @@ resource "azurerm_linux_function_app" "this" {
     local.app_settings,
     var.application_insights_enabled ? {
       "APPINSIGHTS_INSTRUMENTATIONKEY"        = var.application_insights_key != null ? var.application_insights_key : azurerm_application_insights.this[0].instrumentation_key
-      "APPLICATIONINSIGHTS_CONNECTION_STRING"  = var.application_insights_connection_string != null ? var.application_insights_connection_string : azurerm_application_insights.this[0].connection_string
+      "APPLICATIONINSIGHTS_CONNECTION_STRING" = var.application_insights_connection_string != null ? var.application_insights_connection_string : azurerm_application_insights.this[0].connection_string
     } : {}
   )
 
@@ -270,21 +270,21 @@ resource "azurerm_linux_function_app" "this" {
   }
 
   site_config {
-    always_on                              = local.selected_config.always_on && var.sku_name != "Y1"
-    ftps_state                             = var.ftps_state
-    minimum_tls_version                    = var.minimum_tls_version
-    http2_enabled                          = true
-    websockets_enabled                     = false
-    vnet_route_all_enabled                 = var.virtual_network_subnet_id != null
-    
+    always_on              = local.selected_config.always_on && var.sku_name != "Y1"
+    ftps_state             = var.ftps_state
+    minimum_tls_version    = var.minimum_tls_version
+    http2_enabled          = true
+    websockets_enabled     = false
+    vnet_route_all_enabled = var.virtual_network_subnet_id != null
+
     # Scaling
-    app_scale_limit                        = var.app_scale_limit
-    elastic_instance_minimum               = var.elastic_instance_minimum
-    pre_warmed_instance_count              = var.pre_warmed_instance_count
-    
+    app_scale_limit           = var.app_scale_limit
+    elastic_instance_minimum  = var.elastic_instance_minimum
+    pre_warmed_instance_count = var.pre_warmed_instance_count
+
     # Health check
-    health_check_path                      = local.selected_config.health_check_enabled ? "/api/health" : null
-    health_check_eviction_time_in_min      = local.selected_config.health_check_enabled ? 5 : null
+    health_check_path                 = local.selected_config.health_check_enabled ? "/api/health" : null
+    health_check_eviction_time_in_min = local.selected_config.health_check_enabled ? 5 : null
 
     # Application insights
     application_insights_connection_string = var.application_insights_enabled ? (

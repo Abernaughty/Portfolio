@@ -43,7 +43,7 @@ output "prod_container_name" {
 # Backend configuration helper
 output "backend_config_example" {
   description = "Example backend configuration for environments"
-  value = <<-EOT
+  value       = <<-EOT
     terraform {
       backend "azurerm" {
         resource_group_name  = "${azurerm_resource_group.state.name}"

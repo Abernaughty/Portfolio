@@ -5,7 +5,7 @@
 variable "name" {
   description = "The name of the Function App"
   type        = string
-  
+
   validation {
     condition     = can(regex("^[a-z0-9-]{2,60}$", var.name))
     error_message = "Name must be 2-60 characters, lowercase letters, numbers, and hyphens only."
@@ -41,7 +41,7 @@ variable "environment" {
   description = "Environment name (dev, staging, prod)"
   type        = string
   default     = "dev"
-  
+
   validation {
     condition     = contains(["dev", "staging", "prod"], var.environment)
     error_message = "Environment must be dev, staging, or prod."
@@ -52,7 +52,7 @@ variable "os_type" {
   description = "The operating system type (Windows or Linux)"
   type        = string
   default     = "Windows"
-  
+
   validation {
     condition     = contains(["Windows", "Linux"], var.os_type)
     error_message = "OS type must be Windows or Linux."

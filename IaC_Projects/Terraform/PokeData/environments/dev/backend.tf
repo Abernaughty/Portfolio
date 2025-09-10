@@ -5,7 +5,7 @@
 terraform {
   backend "azurerm" {
     resource_group_name  = "pokedata-terraform-state-rg"
-    storage_account_name = "tfstateyul4ts"  # Your actual storage account name
+    storage_account_name = "tfstateyul4ts" # Your actual storage account name
     container_name       = "tfstate-dev"
     key                  = "dev.terraform.tfstate"
   }

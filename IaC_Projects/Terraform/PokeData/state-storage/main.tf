@@ -30,7 +30,7 @@ resource "random_string" "storage_suffix" {
   length  = 6
   special = false
   upper   = false
-  numeric  = true
+  numeric = true
 }
 
 # Resource group for state storage
@@ -54,11 +54,11 @@ resource "azurerm_storage_account" "state" {
   location                 = azurerm_resource_group.state.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
-  
+
   # Security settings
   min_tls_version                 = "TLS1_2"
   allow_nested_items_to_be_public = false
-  
+
   # Enable versioning for state file history
   blob_properties {
     versioning_enabled = true
@@ -104,7 +104,7 @@ resource "azurerm_storage_container" "prod" {
 resource "azurerm_storage_account_network_rules" "state" {
   storage_account_id = azurerm_storage_account.state.id
 
-  default_action             = "Allow"  # Change to "Deny" for production with specific IP allowlist
-  ip_rules                   = []       # Add your IP addresses here if needed
-  bypass                     = ["AzureServices"]
+  default_action = "Allow" # Change to "Deny" for production with specific IP allowlist
+  ip_rules       = []      # Add your IP addresses here if needed
+  bypass         = ["AzureServices"]
 }

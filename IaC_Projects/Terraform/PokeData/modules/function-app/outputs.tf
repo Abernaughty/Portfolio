@@ -36,8 +36,8 @@ output "possible_outbound_ip_addresses" {
 # Identity outputs
 output "identity_principal_id" {
   description = "The Principal ID of the System Assigned Managed Identity"
-  value       = var.identity_type != null ? (
-    var.os_type == "Windows" ? 
+  value = var.identity_type != null ? (
+    var.os_type == "Windows" ?
     (length(azurerm_windows_function_app.this[0].identity) > 0 ? azurerm_windows_function_app.this[0].identity[0].principal_id : null) :
     (length(azurerm_linux_function_app.this[0].identity) > 0 ? azurerm_linux_function_app.this[0].identity[0].principal_id : null)
   ) : null
@@ -45,8 +45,8 @@ output "identity_principal_id" {
 
 output "identity_tenant_id" {
   description = "The Tenant ID of the System Assigned Managed Identity"
-  value       = var.identity_type != null ? (
-    var.os_type == "Windows" ? 
+  value = var.identity_type != null ? (
+    var.os_type == "Windows" ?
     (length(azurerm_windows_function_app.this[0].identity) > 0 ? azurerm_windows_function_app.this[0].identity[0].tenant_id : null) :
     (length(azurerm_linux_function_app.this[0].identity) > 0 ? azurerm_linux_function_app.this[0].identity[0].tenant_id : null)
   ) : null

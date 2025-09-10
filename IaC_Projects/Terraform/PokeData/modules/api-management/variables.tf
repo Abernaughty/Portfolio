@@ -5,7 +5,7 @@
 variable "name" {
   description = "The name of the API Management instance"
   type        = string
-  
+
   validation {
     condition     = can(regex("^[a-z][a-z0-9-]{0,48}[a-z0-9]$", var.name))
     error_message = "Name must start with letter, contain only lowercase letters, numbers and hyphens, and be 1-50 characters."
@@ -30,7 +30,7 @@ variable "publisher_name" {
 variable "publisher_email" {
   description = "The email of the publisher"
   type        = string
-  
+
   validation {
     condition     = can(regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", var.publisher_email))
     error_message = "Publisher email must be a valid email address."
@@ -51,7 +51,7 @@ variable "sku_name" {
   description = "The pricing tier of this API Management service"
   type        = string
   default     = "Consumption_0"
-  
+
   validation {
     condition     = contains(["Consumption_0", "Developer_1", "Basic_1", "Standard_1", "Premium_1"], var.sku_name)
     error_message = "SKU must be one of: Consumption_0, Developer_1, Basic_1, Standard_1, Premium_1."
@@ -68,7 +68,7 @@ variable "virtual_network_type" {
   description = "The type of virtual network configuration"
   type        = string
   default     = "None"
-  
+
   validation {
     condition     = contains(["None", "External", "Internal"], var.virtual_network_type)
     error_message = "Virtual network type must be None, External, or Internal."

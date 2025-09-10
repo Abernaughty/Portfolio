@@ -85,7 +85,7 @@ resource "azurerm_cosmosdb_account" "this" {
       tier = var.backup_tier
     }
   }
-  
+
   dynamic "backup" {
     for_each = var.backup_type == "Periodic" ? [1] : []
     content {
@@ -105,8 +105,8 @@ resource "azurerm_cosmosdb_account" "this" {
   }
 
   # Network configuration
-  public_network_access_enabled = var.public_network_access_enabled
-  ip_range_filter               = toset(var.ip_range_filter)
+  public_network_access_enabled     = var.public_network_access_enabled
+  ip_range_filter                   = toset(var.ip_range_filter)
   is_virtual_network_filter_enabled = length(var.virtual_network_rules) > 0
 
   # Virtual network rules
@@ -134,22 +134,22 @@ resource "azurerm_cosmosdb_account" "this" {
   local_authentication_disabled         = false
   access_key_metadata_writes_enabled    = true
   network_acl_bypass_for_azure_services = false
-  
+
   # High availability settings
   automatic_failover_enabled       = var.enable_automatic_failover
   multiple_write_locations_enabled = var.enable_multiple_write_locations
-  
+
   # Free tier (only one per subscription allowed)
   free_tier_enabled = var.enable_free_tier
-  
+
   # Advanced features
   analytical_storage_enabled = var.analytical_storage_enabled
   partition_merge_enabled    = false
   burst_capacity_enabled     = false
-  
+
   # Identity
   default_identity_type = "FirstPartyIdentity"
-  
+
   # Tags
   tags = local.common_tags
 }
@@ -160,7 +160,7 @@ resource "azurerm_cosmosdb_account" "this" {
 # -----------------------------------------------------------------------------
 
 resource "azurerm_cosmosdb_sql_database" "example" {
-  count               = var.environment == "dev" ? 1 : 0  # Only create in dev for demo
+  count               = var.environment == "dev" ? 1 : 0 # Only create in dev for demo
   name                = "pokemon-cards"
   resource_group_name = var.resource_group_name
   account_name        = azurerm_cosmosdb_account.this.name
@@ -172,12 +172,12 @@ resource "azurerm_cosmosdb_sql_database" "example" {
 # -----------------------------------------------------------------------------
 
 resource "azurerm_cosmosdb_sql_container" "example" {
-  count                 = var.environment == "dev" ? 1 : 0  # Only create in dev for demo
+  count                 = var.environment == "dev" ? 1 : 0 # Only create in dev for demo
   name                  = "cards"
   resource_group_name   = var.resource_group_name
   account_name          = azurerm_cosmosdb_account.this.name
   database_name         = azurerm_cosmosdb_sql_database.example[0].name
-  partition_key_paths   = ["/id"]  # Changed to array format for v4.40.0
+  partition_key_paths   = ["/id"] # Changed to array format for v4.40.0
   partition_key_version = 1
 
   # For serverless, we don't set throughput

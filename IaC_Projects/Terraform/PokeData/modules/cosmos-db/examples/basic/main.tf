@@ -5,7 +5,7 @@
 
 terraform {
   required_version = ">= 1.9.0"
-  
+
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -23,7 +23,7 @@ provider "azurerm" {
 resource "azurerm_resource_group" "example" {
   name     = "pokedata-cosmos-example-rg"
   location = "Central US"
-  
+
   tags = {
     Environment = "Example"
     Purpose     = "Module Testing"
@@ -32,26 +32,26 @@ resource "azurerm_resource_group" "example" {
 
 # Use the Cosmos DB module
 module "cosmos_db" {
-  source = "../.."  # Points to the module root
-  
+  source = "../.." # Points to the module root
+
   # Required variables
   name                = "pokedata-cosmos-example"
   resource_group_name = azurerm_resource_group.example.name
   location            = azurerm_resource_group.example.location
-  
+
   # Optional configurations
   environment   = "dev"
   capacity_mode = "serverless"
-  
+
   # Cost optimization for example
   enable_free_tier = true
-  throughput_limit = 1000  # Lower limit for testing
-  
+  throughput_limit = 1000 # Lower limit for testing
+
   # Basic security
   ip_range_filter = [
-    "0.0.0.0/0"  # WARNING: Open to all - only for testing!
+    "0.0.0.0/0" # WARNING: Open to all - only for testing!
   ]
-  
+
   # Tags
   tags = {
     Project = "PokeData"

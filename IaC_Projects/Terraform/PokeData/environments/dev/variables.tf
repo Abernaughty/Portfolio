@@ -47,7 +47,7 @@ variable "github_token" {
   description = "GitHub personal access token for Static Web App deployment"
   type        = string
   sensitive   = true
-  default     = ""  # Will be provided via environment variable or tfvars
+  default     = "" # Will be provided via environment variable or tfvars
 }
 
 # API Management Configuration
@@ -73,32 +73,32 @@ variable "cosmos_capacity_mode" {
 variable "function_app_sku" {
   description = "Override for Function App SKU"
   type        = string
-  default     = ""  # Empty means use module default based on environment
+  default     = "" # Empty means use module default based on environment
 }
 
 variable "static_web_app_sku" {
   description = "Override for Static Web App SKU"
   type        = string
-  default     = ""  # Empty means use module default based on environment
+  default     = "" # Empty means use module default based on environment
 }
 
 variable "apim_sku" {
   description = "Override for API Management SKU"
   type        = string
-  default     = ""  # Empty means use module default based on environment
+  default     = "" # Empty means use module default based on environment
 }
 
 # Networking
 variable "enable_private_endpoints" {
   description = "Enable private endpoints for resources"
   type        = bool
-  default     = false  # Disabled for dev to save costs
+  default     = false # Disabled for dev to save costs
 }
 
 variable "allowed_ip_ranges" {
   description = "IP ranges allowed to access resources"
   type        = list(string)
-  default     = []  # Empty means public access (dev only)
+  default     = [] # Empty means public access (dev only)
 }
 
 # Monitoring
@@ -118,7 +118,7 @@ variable "log_retention_days" {
 variable "enable_auto_scaling" {
   description = "Enable auto-scaling for applicable resources"
   type        = bool
-  default     = false  # Disabled for dev
+  default     = false # Disabled for dev
 }
 
 variable "enable_backup" {
@@ -130,5 +130,5 @@ variable "enable_backup" {
 variable "backup_retention_days" {
   description = "Number of days to retain backups"
   type        = number
-  default     = 7  # Minimal for dev
+  default     = 7 # Minimal for dev
 }

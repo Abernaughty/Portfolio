@@ -6,7 +6,7 @@
 variable "name" {
   description = "The name of the Cosmos DB account. Must be globally unique."
   type        = string
-  
+
   validation {
     condition     = can(regex("^[a-z0-9-]{3,44}$", var.name))
     error_message = "Name must be 3-44 characters, lowercase letters, numbers, and hyphens only."
@@ -32,7 +32,7 @@ variable "environment" {
   description = "Environment name (dev, staging, prod) - used for tagging and configuration"
   type        = string
   default     = "dev"
-  
+
   validation {
     condition     = contains(["dev", "staging", "prod"], var.environment)
     error_message = "Environment must be dev, staging, or prod."
@@ -43,7 +43,7 @@ variable "capacity_mode" {
   description = "Cosmos DB capacity mode: 'serverless' or 'provisioned'"
   type        = string
   default     = "serverless"
-  
+
   validation {
     condition     = contains(["serverless", "provisioned"], var.capacity_mode)
     error_message = "Capacity mode must be 'serverless' or 'provisioned'."
