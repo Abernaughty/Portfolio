@@ -12,7 +12,7 @@ steps:
       provider: 'azurerm'
       command: 'init'
       workingDirectory: '${{ parameters.workingDirectory }}'
-      backendServiceArm: 'Azure-Service-Connection'
+      backendServiceArm: '$(azureServiceConnection)'
       backendAzureRmResourceGroupName: 'tfstate-rg'
       backendAzureRmStorageAccountName: 'tfstateyul4ts'
       backendAzureRmContainerName: 'tfstate'
@@ -28,7 +28,7 @@ steps:
       workingDirectory: '${{ parameters.workingDirectory }}'
       # Explicit var-file; detailed-exitcode = 0 (no change) or 2 (changes)
       commandOptions: '-var-file=terraform.tfvars -out=tfplan -input=false -detailed-exitcode'
-      environmentServiceNameAzureRM: 'Azure-Service-Connection'
+      environmentServiceNameAzureRM: '$(azureServiceConnection)'
       publishPlanResults: 'tfplan-${{ parameters.environment }}'
     env:
       TF_VAR_github_token: $(github_token)

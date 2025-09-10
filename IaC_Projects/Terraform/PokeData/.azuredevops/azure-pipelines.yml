@@ -34,6 +34,8 @@ variables:
     value: 'terraform-plan'
   - name: environment
     value: 'dev'
+  - name: azureServiceConnection
+    value: 'ARM Service Connection - Thunderdome'
 
 pool:
   vmImage: 'ubuntu-latest'

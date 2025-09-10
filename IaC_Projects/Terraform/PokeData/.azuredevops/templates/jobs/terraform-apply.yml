@@ -25,7 +25,7 @@ steps:
       provider: 'azurerm'
       command: 'init'
       workingDirectory: '${{ parameters.workingDirectory }}'
-      backendServiceArm: 'Azure-Service-Connection'
+      backendServiceArm: '$(azureServiceConnection)'
       backendAzureRmResourceGroupName: 'tfstate-rg'
       backendAzureRmStorageAccountName: 'tfstateyul4ts'
       backendAzureRmContainerName: 'tfstate'
@@ -60,7 +60,7 @@ steps:
       command: 'apply'
       workingDirectory: '${{ parameters.workingDirectory }}'
       commandOptions: '-input=false -auto-approve tfplan'
-      environmentServiceNameAzureRM: 'Azure-Service-Connection'
+      environmentServiceNameAzureRM: '$(azureServiceConnection)'
     env:
       TF_VAR_github_token: $(github_token)
 
