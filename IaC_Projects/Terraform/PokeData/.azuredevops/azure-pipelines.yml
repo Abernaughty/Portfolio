@@ -40,7 +40,8 @@ variables:
     value: 'PokeData Repo Service Connection'
 
 pool:
-  vmImage: 'ubuntu-latest'
+  name: Default
+  # vmImage: 'ubuntu-latest'
 
 stages:
   # Stage 1: Validation and Security Scanning
