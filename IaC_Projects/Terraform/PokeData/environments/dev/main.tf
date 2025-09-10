@@ -118,8 +118,8 @@ module "static_web_app" {
 
   # GitHub configuration
   repository_url    = var.github_repository_url
-  repository_branch = var.github_branch # Fixed: use repository_branch instead of branch
-  repository_token  = var.repository_token  # Added: pass the GitHub token
+  repository_branch = var.github_branch    # Fixed: use repository_branch instead of branch
+  repository_token  = var.repository_token # Added: pass the GitHub token
 
   # Build configuration
   app_location    = "/"
