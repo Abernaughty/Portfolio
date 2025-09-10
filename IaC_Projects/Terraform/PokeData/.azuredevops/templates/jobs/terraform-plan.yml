@@ -13,7 +13,7 @@ steps:
       command: 'init'
       workingDirectory: '${{ parameters.workingDirectory }}'
       backendServiceArm: '$(azureServiceConnection)'
-      backendAzureRmResourceGroupName: 'tfstate-rg'
+      backendAzureRmResourceGroupName: 'pokedata-terraform-state-rg'
       backendAzureRmStorageAccountName: 'tfstateyul4ts'
       backendAzureRmContainerName: 'tfstate'
       backendAzureRmKey: 'pokedata/${{ parameters.environment }}.tfstate'
