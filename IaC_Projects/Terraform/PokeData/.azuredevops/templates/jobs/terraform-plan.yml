@@ -15,7 +15,7 @@ steps:
       backendServiceArm: '$(azureServiceConnection)'
       backendAzureRmResourceGroupName: 'pokedata-terraform-state-rg'
       backendAzureRmStorageAccountName: 'tfstateyul4ts'
-      backendAzureRmContainerName: 'tfstate'
+      backendAzureRmContainerName: 'tfstate-${{ parameters.environment }}'
       backendAzureRmKey: 'pokedata/${{ parameters.environment }}.tfstate'
     env:
       TF_VAR_github_token: $(github_token)   # secret var from ADO group/Key Vault
