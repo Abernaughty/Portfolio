@@ -6,7 +6,7 @@
 .terraform.lock.hcl
 
 # Variable files with sensitive data
-*.tfvars
+#*.tfvars
 !*.tfvars.example
 
 # Environment variables
