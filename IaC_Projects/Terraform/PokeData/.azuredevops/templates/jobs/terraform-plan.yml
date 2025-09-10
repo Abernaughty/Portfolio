@@ -37,19 +37,17 @@ steps:
 
   - task: PowerShell@2
     displayName: 'Generate Plan Summary'
-    workingDirectory: '${{ parameters.workingDirectory }}'
     inputs:
       targetType: inline
+      workingDirectory: '${{ parameters.workingDirectory }}'
       script: |
         $ErrorActionPreference = 'Stop'
         $planPath = Join-Path (Get-Location) 'tfplan'
         if (-not (Test-Path $planPath)) { throw "Plan file not found: $planPath" }
 
-        # Write human-readable and JSON plan files
         terraform show -no-color $planPath | Out-File -Encoding utf8 'tfplan.txt'
         terraform show -json     $planPath | Out-File -Encoding utf8 'tfplan.json'
 
-        # Build a concise summary from JSON
         $plan = Get-Content 'tfplan.json' -Raw | ConvertFrom-Json
         $rc = @($plan.resource_changes)
         $creates = @($rc | Where-Object { $_.change.actions -contains 'create' }).Count
