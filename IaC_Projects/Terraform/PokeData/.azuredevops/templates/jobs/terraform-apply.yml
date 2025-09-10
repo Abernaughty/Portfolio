@@ -43,14 +43,24 @@ steps:
       downloadPath: '$(Agent.TempDirectory)'
 
   # Place tfplan next to the code for a simple relative apply
-  - script: |
-      set -e
-      SRC="$(Agent.TempDirectory)/${{ parameters.artifactName }}/tfplan"
-      DST="${{ parameters.workingDirectory }}/tfplan"
-      echo "Copying plan: $SRC -> $DST"
-      cp "$SRC" "$DST"
-      echo "✅ Terraform plan file restored"
+  - task: PowerShell@2
     displayName: 'Restore Plan File'
+    inputs:
+      targetType: inline
+      workingDirectory: '${{ parameters.workingDirectory }}'
+      script: |
+        $src = Join-Path "$(Agent.TempDirectory)" "${{ parameters.artifactName }}\tfplan"
+        $dst = Join-Path "${{ parameters.workingDirectory }}" "tfplan"
+        Write-Host "Copying plan: $src -> $dst"
+
+        if (-not (Test-Path $src)) {
+          throw "Plan artifact not found at $src. Check that the Plan stage published the artifact named '${{ parameters.artifactName }}' and that you're downloading it in Apply."
+        }
+
+        Copy-Item -LiteralPath $src -Destination $dst -Force
+        if (-not (Test-Path $dst)) { throw "Failed to copy plan to $dst" }
+        Write-Host "✅ Terraform plan file restored at $dst"
+
 
   # Apply the exact plan reviewed earlier (no -var-file here)
   - task: TerraformTaskV4@4
