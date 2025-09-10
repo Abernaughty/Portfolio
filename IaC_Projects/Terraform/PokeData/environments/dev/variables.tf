@@ -43,7 +43,7 @@ variable "github_branch" {
   default     = "main"
 }
 
-variable "github_token" {
+variable "repository_token" {
   description = "GitHub personal access token for Static Web App deployment"
   type        = string
   sensitive   = true
