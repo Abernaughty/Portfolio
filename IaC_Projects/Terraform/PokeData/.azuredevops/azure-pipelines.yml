@@ -115,26 +115,26 @@ stages:
 
   # Stage 5: Notification
   - stage: Notify
-    displayName: 'Send Notifications'
-    dependsOn: 
-      - Test
+    displayName: Send Notifications
+    dependsOn: Test
     condition: always()
     jobs:
-      - job: SendNotification
-        displayName: 'Pipeline Status Notification'
-        steps:
-          - task: SendEmail@1
-            displayName: 'Send Pipeline Status Email'
-            inputs:
-              To: 'mike@maber.io'
-              Subject: 'PokeData Pipeline - $(environment) - $(Build.SourceBranchName) - $(Agent.JobStatus)'
-              Body: |
-                Pipeline Status: $(Agent.JobStatus)
-                Environment: $(environment)
-                Build Number: $(Build.BuildNumber)
-                Commit: $(Build.SourceVersion)
-                Triggered By: $(Build.RequestedFor)
-                
-                View Pipeline: $(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
-              SmtpServer: 'smtp.office365.com'
-              SmtpPort: '587'
+    - job: SendGraphMail
+      displayName: Send status via Microsoft Graph
+      steps:
+      - checkout: self
+
+      - task: AzureCLI@2
+        displayName: Send Pipeline Status Email (Graph)
+        inputs:
+          azureSubscription: '$(azureServiceConnection)'
+          scriptType: pscore
+          scriptLocation: scriptPath
+          scriptPath: '.azuredevops/scripts/send-graph-mail.ps1'
+          arguments: >
+            -From ci@maber.io
+            -To mike@maber.io
+            -Environment $(environment)
+            -JobStatus "$(Agent.JobStatus)"
+            -Branch "$(Build.SourceBranchName)"
+            -RequestedFor "$(Build.RequestedFor)"
