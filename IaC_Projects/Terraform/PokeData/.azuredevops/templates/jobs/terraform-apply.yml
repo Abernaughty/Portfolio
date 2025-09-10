@@ -13,10 +13,10 @@ steps:
   - checkout: self
     persistCredentials: true
 
-  - task: TerraformInstaller@0
-    displayName: 'Install Terraform ${{ parameters.terraformVersion }}'
+  - task: TerraformInstaller@1
+    displayName: 'Install Terraform latest'
     inputs:
-      terraformVersion: '${{ parameters.terraformVersion }}'
+      terraformVersion: latest
 
   # Re-init so provider plugins/backends exist in this fresh job workspace
   - task: TerraformTaskV4@4

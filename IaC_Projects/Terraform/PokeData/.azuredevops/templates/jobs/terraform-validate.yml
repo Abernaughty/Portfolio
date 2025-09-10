@@ -6,10 +6,10 @@ parameters:
     type: string
 
 steps:
-  - task: TerraformInstaller@0
-    displayName: 'Install Terraform ${{ parameters.terraformVersion }}'
+  - task: TerraformInstaller@1
+    displayName: 'Install Terraform latest'
     inputs:
-      terraformVersion: '${{ parameters.terraformVersion }}'
+      terraformVersion: latest
 
   # Style/format check
   - script: |

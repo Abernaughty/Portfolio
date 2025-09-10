@@ -48,7 +48,7 @@ steps:
         if (-not (Test-Path $tfsec)) { throw "tfsec not found at $tfsec" }
         $outFile = "${{ parameters.workingDirectory }}/tfsec-results.json"
         Write-Host "Running tfsec..."
-        & $tfsec -no-color -format json -out "$outFile" "${{ parameters.workingDirectory }}"
+        & $tfsec --no-color --format json --out "$outFile" --soft-fail "${{ parameters.workingDirectory }}"
         $exit = $LASTEXITCODE
         Write-Host "tfsec exit code: $exit"
         # soft-fail on findings; switch to 'exit 1' to enforce
@@ -62,7 +62,7 @@ steps:
       OUT_FILE="${{ parameters.workingDirectory }}/tfsec-results.json"
       TFSEC_PATH="${TFSEC_PATH:-/tmp/tfsec}"
       echo "Running tfsec..."
-      "${TFSEC_PATH}" -no-color -format json -out "${OUT_FILE}" "${{ parameters.workingDirectory }}" || \
+      "${TFSEC_PATH}" --no-color --format json --out "${OUT_FILE}" --soft-fail "${{ parameters.workingDirectory }}" || \
         { echo "tfsec found issues (soft-fail)"; exit 0; }
     displayName: 'Run tfsec (Linux)'
     condition: ne(variables['Agent.OS'], 'Windows_NT')
