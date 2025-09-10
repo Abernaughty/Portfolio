@@ -18,7 +18,7 @@ steps:
       backendAzureRmContainerName: 'tfstate-${{ parameters.environment }}'
       backendAzureRmKey: 'pokedata/${{ parameters.environment }}.tfstate'
     env:
-      TF_VAR_github_token: $(github_token)   # secret var from ADO group/Key Vault
+      TF_VAR_repository_token: $(github_token)   # secret var from ADO group/Key Vault
 
   - task: TerraformTaskV4@4
     displayName: 'Terraform Plan'
@@ -31,7 +31,7 @@ steps:
       environmentServiceNameAzureRM: '$(azureServiceConnection)'
       publishPlanResults: 'tfplan-${{ parameters.environment }}'
     env:
-      TF_VAR_github_token: $(github_token)
+      TF_VAR_repository_token: $(github_token)
     # Let exit code 2 (changes) pass; the task reports nonzero -> don't fail the job
     continueOnError: true
 

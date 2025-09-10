@@ -31,7 +31,7 @@ steps:
       backendAzureRmContainerName: 'tfstate'
       backendAzureRmKey: 'pokedata/${{ parameters.environment }}.tfstate'
     env:
-      TF_VAR_github_token: $(github_token)   # secret from variable group / Key Vault
+      TF_VAR_repository_token: $(github_token)   # secret from variable group / Key Vault
 
   # Pull the saved plan artifact produced in the Plan stage
   - task: DownloadBuildArtifacts@1
