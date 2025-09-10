@@ -7,7 +7,7 @@ steps:
   - task: AzureCLI@2
     displayName: 'Verify Resource Group'
     inputs:
-      azureSubscription: 'Azure-Service-Connection'
+      azureSubscription: '$(azureServiceConnection)'
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
@@ -31,7 +31,7 @@ steps:
   - task: AzureCLI@2
     displayName: 'Test Cosmos DB Connectivity'
     inputs:
-      azureSubscription: 'Azure-Service-Connection'
+      azureSubscription: '$(azureServiceConnection)'
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
@@ -62,7 +62,7 @@ steps:
   - task: AzureCLI@2
     displayName: 'Test Function App'
     inputs:
-      azureSubscription: 'Azure-Service-Connection'
+      azureSubscription: '$(azureServiceConnection)'
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
@@ -98,7 +98,7 @@ steps:
   - task: AzureCLI@2
     displayName: 'Test Static Web App'
     inputs:
-      azureSubscription: 'Azure-Service-Connection'
+      azureSubscription: '$(azureServiceConnection)'
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
@@ -131,7 +131,7 @@ steps:
   - task: AzureCLI@2
     displayName: 'Test API Management'
     inputs:
-      azureSubscription: 'Azure-Service-Connection'
+      azureSubscription: '$(azureServiceConnection)'
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
@@ -163,7 +163,7 @@ steps:
   - task: AzureCLI@2
     displayName: 'Verify Application Insights'
     inputs:
-      azureSubscription: 'Azure-Service-Connection'
+      azureSubscription: '$(azureServiceConnection)'
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
