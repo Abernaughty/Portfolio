@@ -23,7 +23,7 @@ steps:
     displayName: 'Terraform init (no backend)'
     workingDirectory: '${{ parameters.workingDirectory }}'
     env:
-      TF_VAR_github_token: $(github_token)
+      TF_VAR_repository_token: $(github_token)
 
   # Validate configuration
   - script: |

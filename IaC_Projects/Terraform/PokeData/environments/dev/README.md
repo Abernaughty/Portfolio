@@ -90,7 +90,7 @@ Estimated monthly cost: **< $50** (with minimal usage)
 You can also use environment variables instead of terraform.tfvars:
 
 ```bash
-export TF_VAR_github_token="your-github-pat"
+export TF_VAR_repository_token="your-github-pat"
 export TF_VAR_apim_publisher_email="your-email@example.com"
 ```
 

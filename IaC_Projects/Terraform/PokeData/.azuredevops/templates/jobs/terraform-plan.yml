@@ -35,29 +35,49 @@ steps:
     # Let exit code 2 (changes) pass; the task reports nonzero -> don't fail the job
     continueOnError: true
 
-  - script: |
-      # Normalize plan exit code: treat 2 (changes) as success-with-changes
-      if [ "$(tail -n1 $(Agent.TempDirectory)/terraform_exit_code 2>/dev/null)" = "2" ]; then
-        echo "Terraform reported changes (exit code 2). Proceeding."
-      fi
-
-      terraform show -no-color tfplan > tfplan.txt
-      terraform show -json tfplan > tfplan.json
-
-      echo "## Terraform Plan Summary for ${{ parameters.environment }}" > plan-summary.md
-      echo "" >> plan-summary.md
-      echo "**Environment:** ${{ parameters.environment }}" >> plan-summary.md
-      echo "**Build:** $(Build.BuildNumber)" >> plan-summary.md
-      echo "**Triggered by:** $(Build.RequestedFor)" >> plan-summary.md
-      echo "" >> plan-summary.md
-      echo "### Resource Changes:" >> plan-summary.md
-      terraform show tfplan | grep -E "will be|must be" | head -20 >> plan-summary.md || true
-
-      cat plan-summary.md
+  - task: PowerShell@2
     displayName: 'Generate Plan Summary'
     workingDirectory: '${{ parameters.workingDirectory }}'
+    inputs:
+      targetType: inline
+      script: |
+        $ErrorActionPreference = 'Stop'
+        $planPath = Join-Path (Get-Location) 'tfplan'
+        if (-not (Test-Path $planPath)) { throw "Plan file not found: $planPath" }
+
+        # Write human-readable and JSON plan files
+        terraform show -no-color $planPath | Out-File -Encoding utf8 'tfplan.txt'
+        terraform show -json     $planPath | Out-File -Encoding utf8 'tfplan.json'
+
+        # Build a concise summary from JSON
+        $plan = Get-Content 'tfplan.json' -Raw | ConvertFrom-Json
+        $rc = @($plan.resource_changes)
+        $creates = @($rc | Where-Object { $_.change.actions -contains 'create' }).Count
+        $updates = @($rc | Where-Object { $_.change.actions -contains 'update' -and $_.change.actions -notcontains 'create' -and $_.change.actions -notcontains 'delete' }).Count
+        $deletes = @($rc | Where-Object { $_.change.actions -contains 'delete' }).Count
+        $top = $rc | Select-Object -First 20 | ForEach-Object { "- $($_.address) : $([string]::Join(',', $_.change.actions))" }
+
+        @"
+        ## Terraform Plan Summary for ${{ parameters.environment }}
+
+        **Environment:** ${{ parameters.environment }}
+        **Build:** $(Build.BuildNumber)
+        **Triggered by:** $(Build.RequestedFor)
+
+        ### Change summary
+        - Creates:  $creates
+        - Updates:  $updates
+        - Deletes:  $deletes
+
+        ### First 20 resource changes
+        $($top -join "`n")
+
+        _Full plan attached as artifacts._
+        "@ | Out-File -Encoding utf8 'plan-summary.md'
+
+        Write-Host "Wrote plan-summary.md, tfplan.txt, tfplan.json"
     env:
-      TF_VAR_github_token: $(github_token)
+      TF_VAR_repository_token: $(github_token)
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Terraform Plan'
