@@ -36,6 +36,8 @@ variables:
     value: 'dev'
   - name: azureServiceConnection
     value: 'ARM Service Connection - Thunderdome'
+  - name: githubServiceConnection
+    value: 'PokeData Repo Service Connection'
 
 pool:
   vmImage: 'ubuntu-latest'

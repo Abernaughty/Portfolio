@@ -91,7 +91,7 @@ steps:
     displayName: 'Post Plan to PR'
     condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
     inputs:
-      gitHubConnection: 'GitHub-Service-Connection'
+      gitHubConnection: '$(githubServiceConnection)'
       repositoryName: '$(Build.Repository.Name)'
       comment: |
         ## Terraform Plan Results - ${{ parameters.environment }}
