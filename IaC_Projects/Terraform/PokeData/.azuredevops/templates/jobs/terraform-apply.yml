@@ -33,21 +33,6 @@ steps:
     env:
       TF_VAR_repository_token: $(github_token)   # secret from variable group / Key Vault
 
-  - task: PowerShell@2
-    displayName: 'Validate GitHub PAT mapping'
-    inputs:
-      targetType: inline
-      script: |
-        if (-not $env:TF_VAR_repository_token) { throw "TF_VAR_repository_token is empty" }
-        $headers = @{ Authorization = "token $($env:TF_VAR_repository_token)"; "User-Agent"="ado" }
-        $repo = "https://api.github.com/repos/Abernaughty/PokeData"
-        $resp = Invoke-WebRequest -Uri $repo -Headers $headers -UseBasicParsing -Method GET -ErrorAction Stop
-        $data = $resp.Content | ConvertFrom-Json
-        if (-not $data.permissions.admin) { throw "PAT owner is not an admin on the repo." }
-        Write-Host "PAT can access the repo and is admin."
-    env:
-      TF_VAR_repository_token: $(github_token)
-
   # Pull the saved plan artifact produced in the Plan stage
   - task: DownloadBuildArtifacts@1
     displayName: 'Download Terraform Plan'
@@ -90,24 +75,37 @@ steps:
       TF_VAR_repository_token: $(github_token)
 
   # Produce a quick, human-readable summary and capture outputs
-  - script: |
-      echo "## Deployment Summary for ${{ parameters.environment }}" > deployment-summary.md
-      echo "" >> deployment-summary.md
-      echo "**Environment:** ${{ parameters.environment }}" >> deployment-summary.md
-      echo "**Build:** $(Build.BuildNumber)" >> deployment-summary.md
-      echo "**Deployed by:** $(Build.RequestedFor)" >> deployment-summary.md
-      echo "**Deployment Time:** $(date)" >> deployment-summary.md
-      echo "" >> deployment-summary.md
-      echo "### Terraform Outputs:" >> deployment-summary.md
-      terraform output -json > outputs.json
-      terraform output >> deployment-summary.md
-      echo "" >> deployment-summary.md
-      echo "✅ Infrastructure successfully deployed to ${{ parameters.environment }}" >> deployment-summary.md
-      cat deployment-summary.md
+  - task: PowerShell@2
     displayName: 'Generate Deployment Summary'
     workingDirectory: '${{ parameters.workingDirectory }}'
     env:
       TF_VAR_repository_token: $(github_token)
+    inputs:
+      targetType: inline
+      script: |
+        $env:TF_IN_AUTOMATION = "true"
+        $file = "deployment-summary.md"
+
+        @"
+  ## Deployment Summary for ${{ parameters.environment }}
+
+  **Environment:** ${{ parameters.environment }}
+  **Build:** $(Build.BuildNumber)
+  **Deployed by:** $(Build.RequestedFor)
+  **Deployment Time:** $(Get-Date -Format "yyyy-MM-dd HH:mm:ss zzz")
+
+  ### Terraform Outputs:
+  "@ | Out-File -FilePath $file -Encoding utf8
+
+        # Write outputs to files
+        terraform output -json | Out-File -FilePath "outputs.json" -Encoding utf8
+        terraform output | Out-File -FilePath $file -Append -Encoding utf8
+
+        Add-Content -Path $file -Value ""
+        Add-Content -Path $file -Value "✅ Infrastructure successfully deployed to ${{ parameters.environment }}"
+
+        # Show the summary
+        Get-Content $file | Write-Host
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Deployment Summary'
