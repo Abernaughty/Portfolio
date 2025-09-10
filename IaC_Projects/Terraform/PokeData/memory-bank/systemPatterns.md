@@ -76,9 +76,9 @@ module "infrastructure" {
 # backend.tf
 terraform {
   backend "azurerm" {
-    resource_group_name  = "tfstate-rg"
-    storage_account_name = "tfstate${environment}"
-    container_name       = "tfstate"
+    resource_group_name  = "pokedata-terraform-state-rg"
+    storage_account_name = "tfstateyul4ts"
+    container_name       = "tfstate${environment}"
     key                  = "${tenant}/${subscription}/${environment}.tfstate"
   }
 }

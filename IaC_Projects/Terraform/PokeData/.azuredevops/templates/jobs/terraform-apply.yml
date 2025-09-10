@@ -26,9 +26,9 @@ steps:
       command: 'init'
       workingDirectory: '${{ parameters.workingDirectory }}'
       backendServiceArm: '$(azureServiceConnection)'
-      backendAzureRmResourceGroupName: 'tfstate-rg'
+      backendAzureRmResourceGroupName: 'pokedata-terraform-state-rg'
       backendAzureRmStorageAccountName: 'tfstateyul4ts'
-      backendAzureRmContainerName: 'tfstate'
+      backendAzureRmContainerName: 'tfstate-${{ parameters.environment }}'
       backendAzureRmKey: 'pokedata/${{ parameters.environment }}.tfstate'
     env:
       TF_VAR_repository_token: $(github_token)   # secret from variable group / Key Vault
@@ -62,7 +62,7 @@ steps:
       commandOptions: '-input=false -auto-approve tfplan'
       environmentServiceNameAzureRM: '$(azureServiceConnection)'
     env:
-      TF_VAR_github_token: $(github_token)
+      TF_VAR_repository_token: $(github_token)
 
   # Produce a quick, human-readable summary and capture outputs
   - script: |
@@ -82,7 +82,7 @@ steps:
     displayName: 'Generate Deployment Summary'
     workingDirectory: '${{ parameters.workingDirectory }}'
     env:
-      TF_VAR_github_token: $(github_token)
+      TF_VAR_repository_token: $(github_token)
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Deployment Summary'
