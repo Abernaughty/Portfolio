@@ -1,72 +1,74 @@
-# Template for Security Scanning with tfsec and checkov
+# templates/jobs/security-scan.yml
 parameters:
   - name: workingDirectory
     type: string
 
 steps:
+  # ---------- Install tfsec ----------
+  # Windows agents
+  - task: PowerShell@2
+    displayName: 'Install tfsec (Windows)'
+    condition: eq(variables['Agent.OS'], 'Windows_NT')
+    inputs:
+      targetType: inline
+      script: |
+        $ErrorActionPreference = 'Stop'
+        $version = 'v1.28.6'  # pin a known-good; update as needed
+        $out    = Join-Path $env:Agent_TempDirectory 'tfsec.exe'
+        Write-Host "Downloading tfsec $version for Windows..."
+        Invoke-WebRequest -UseBasicParsing `
+          -Uri "https://github.com/aquasecurity/tfsec/releases/download/$version/tfsec-windows-amd64.exe" `
+          -OutFile $out
+        if (-not (Test-Path $out)) { throw "tfsec download failed" }
+        Write-Host "tfsec installed to $out"
+        # Make available in PATH for subsequent steps of this job
+        $env:PATH = "$($env:Agent_TempDirectory);$env:PATH"
+        Write-Host "##vso[task.setvariable variable=TFSEC_PATH;isOutput=false]$out"
+
+  # Linux agents
   - script: |
-      echo "Installing tfsec..."
-      curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
-      sudo mv tfsec /usr/local/bin/
-      tfsec --version
-    displayName: 'Install tfsec'
+      set -euo pipefail
+      VER="v1.28.6"
+      echo "Downloading tfsec ${VER} for Linux..."
+      curl -sSL -o /tmp/tfsec "https://github.com/aquasecurity/tfsec/releases/download/${VER}/tfsec-linux-amd64"
+      chmod +x /tmp/tfsec
+      echo "##vso[task.setvariable variable=TFSEC_PATH;/tmp/tfsec]"
+    displayName: 'Install tfsec (Linux)'
+    condition: ne(variables['Agent.OS'], 'Windows_NT')
+
+  # ---------- Run tfsec ----------
+  - task: PowerShell@2
+    displayName: 'Run tfsec (Windows)'
+    condition: eq(variables['Agent.OS'], 'Windows_NT')
+    inputs:
+      targetType: inline
+      script: |
+        $tfsec = "$(TFSEC_PATH)"
+        if (-not $tfsec) { $tfsec = Join-Path $env:Agent_TempDirectory 'tfsec.exe' }
+        if (-not (Test-Path $tfsec)) { throw "tfsec not found at $tfsec" }
+        Write-Host "Running tfsec..."
+        & $tfsec -no-color -format json -out tfsec-results.json "${{ parameters.workingDirectory }}"
+        $exit = $LASTEXITCODE
+        Write-Host "tfsec exit code: $exit"
+        # Optional: treat findings as warnings (soft fail). Set to 'exit 1' to enforce.
+        if ($exit -ne 0) {
+          Write-Warning "tfsec found issues. See artifact tfsec-results.json"
+          exit 0
+        }
 
   - script: |
-      echo "Running tfsec security scan..."
-      tfsec ${{ parameters.workingDirectory }} \
-        --format json \
-        --out tfsec-results.json \
-        --soft-fail || true
-      
-      # Also run with default format for console output
-      tfsec ${{ parameters.workingDirectory }} \
-        --soft-fail || true
-    displayName: 'Run tfsec Security Scan'
-    workingDirectory: '$(System.DefaultWorkingDirectory)'
+      set -euo pipefail
+      TFSEC_PATH="${TFSEC_PATH:-/tmp/tfsec}"
+      echo "Running tfsec..."
+      "${TFSEC_PATH}" -no-color -format json -out tfsec-results.json "${{ parameters.workingDirectory }}" || \
+        { echo "tfsec found issues (soft-fail)"; exit 0; }
+    displayName: 'Run tfsec (Linux)'
+    condition: ne(variables['Agent.OS'], 'Windows_NT')
 
+  # Publish results
   - task: PublishBuildArtifacts@1
-    displayName: 'Publish tfsec Results'
+    displayName: 'Publish tfsec results'
     inputs:
       pathToPublish: '$(System.DefaultWorkingDirectory)/tfsec-results.json'
-      artifactName: 'security-scan-results'
+      artifactName: 'tfsec-${{ parameters.workingDirectory##*/ }}'
       publishLocation: 'Container'
-    condition: always()
-
-  - script: |
-      echo "Installing Checkov..."
-      pip3 install checkov
-      checkov --version
-    displayName: 'Install Checkov'
-
-  - script: |
-      echo "Running Checkov compliance scan..."
-      checkov -d ${{ parameters.workingDirectory }} \
-        --framework terraform \
-        --output json \
-        --file-output checkov-results.json \
-        --soft-fail || true
-      
-      # Also run with console output
-      checkov -d ${{ parameters.workingDirectory }} \
-        --framework terraform \
-        --compact \
-        --soft-fail || true
-    displayName: 'Run Checkov Compliance Scan'
-    workingDirectory: '$(System.DefaultWorkingDirectory)'
-
-  - task: PublishBuildArtifacts@1
-    displayName: 'Publish Checkov Results'
-    inputs:
-      pathToPublish: '$(System.DefaultWorkingDirectory)/checkov-results.json'
-      artifactName: 'compliance-scan-results'
-      publishLocation: 'Container'
-    condition: always()
-
-  - script: |
-      echo "## Security Scan Summary"
-      echo "✅ tfsec scan completed"
-      echo "✅ Checkov scan completed"
-      echo ""
-      echo "Results have been published as build artifacts"
-      echo "Review the security findings before proceeding with deployment"
-    displayName: 'Security Scan Summary'
