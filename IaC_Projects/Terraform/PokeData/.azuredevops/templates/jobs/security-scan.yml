@@ -2,6 +2,9 @@
 parameters:
   - name: workingDirectory
     type: string
+  - name: environment
+    type: string
+    default: dev
 
 steps:
   # ---------- Install tfsec ----------
@@ -13,17 +16,15 @@ steps:
       targetType: inline
       script: |
         $ErrorActionPreference = 'Stop'
-        $version = 'v1.28.6'  # pin a known-good; update as needed
+        $version = 'v1.28.6'
         $out    = Join-Path $env:Agent_TempDirectory 'tfsec.exe'
         Write-Host "Downloading tfsec $version for Windows..."
         Invoke-WebRequest -UseBasicParsing `
           -Uri "https://github.com/aquasecurity/tfsec/releases/download/$version/tfsec-windows-amd64.exe" `
           -OutFile $out
         if (-not (Test-Path $out)) { throw "tfsec download failed" }
-        Write-Host "tfsec installed to $out"
-        # Make available in PATH for subsequent steps of this job
-        $env:PATH = "$($env:Agent_TempDirectory);$env:PATH"
-        Write-Host "##vso[task.setvariable variable=TFSEC_PATH;isOutput=false]$out"
+        # expose path to later steps
+        Write-Host "##vso[task.setvariable variable=TFSEC_PATH]$out"
 
   # Linux agents
   - script: |
@@ -32,7 +33,7 @@ steps:
       echo "Downloading tfsec ${VER} for Linux..."
       curl -sSL -o /tmp/tfsec "https://github.com/aquasecurity/tfsec/releases/download/${VER}/tfsec-linux-amd64"
       chmod +x /tmp/tfsec
-      echo "##vso[task.setvariable variable=TFSEC_PATH;/tmp/tfsec]"
+      echo "##vso[task.setvariable variable=TFSEC_PATH]/tmp/tfsec"
     displayName: 'Install tfsec (Linux)'
     condition: ne(variables['Agent.OS'], 'Windows_NT')
 
@@ -44,13 +45,13 @@ steps:
       targetType: inline
       script: |
         $tfsec = "$(TFSEC_PATH)"
-        if (-not $tfsec) { $tfsec = Join-Path $env:Agent_TempDirectory 'tfsec.exe' }
         if (-not (Test-Path $tfsec)) { throw "tfsec not found at $tfsec" }
+        $outFile = "${{ parameters.workingDirectory }}/tfsec-results.json"
         Write-Host "Running tfsec..."
-        & $tfsec -no-color -format json -out tfsec-results.json "${{ parameters.workingDirectory }}"
+        & $tfsec -no-color -format json -out "$outFile" "${{ parameters.workingDirectory }}"
         $exit = $LASTEXITCODE
         Write-Host "tfsec exit code: $exit"
-        # Optional: treat findings as warnings (soft fail). Set to 'exit 1' to enforce.
+        # soft-fail on findings; switch to 'exit 1' to enforce
         if ($exit -ne 0) {
           Write-Warning "tfsec found issues. See artifact tfsec-results.json"
           exit 0
@@ -58,17 +59,18 @@ steps:
 
   - script: |
       set -euo pipefail
+      OUT_FILE="${{ parameters.workingDirectory }}/tfsec-results.json"
       TFSEC_PATH="${TFSEC_PATH:-/tmp/tfsec}"
       echo "Running tfsec..."
-      "${TFSEC_PATH}" -no-color -format json -out tfsec-results.json "${{ parameters.workingDirectory }}" || \
+      "${TFSEC_PATH}" -no-color -format json -out "${OUT_FILE}" "${{ parameters.workingDirectory }}" || \
         { echo "tfsec found issues (soft-fail)"; exit 0; }
     displayName: 'Run tfsec (Linux)'
     condition: ne(variables['Agent.OS'], 'Windows_NT')
 
-  # Publish results
+  # ---------- Publish results ----------
   - task: PublishBuildArtifacts@1
     displayName: 'Publish tfsec results'
     inputs:
-      pathToPublish: '$(System.DefaultWorkingDirectory)/tfsec-results.json'
-      artifactName: 'tfsec-${{ parameters.workingDirectory##*/ }}'
+      pathToPublish: '${{ parameters.workingDirectory }}/tfsec-results.json'
+      artifactName: 'tfsec-${{ parameters.environment }}'
       publishLocation: 'Container'
