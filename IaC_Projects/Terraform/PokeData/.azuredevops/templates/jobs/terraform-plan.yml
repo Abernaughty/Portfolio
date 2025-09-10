@@ -93,8 +93,6 @@ steps:
         }
 
         Write-Host "OK: PAT is valid, repo access confirmed, admin=true, Actions scope present."
-    env:
-      TF_VAR_repository_token: $(github_token)   # secret var from ADO group/Key Vault
 
   - task: TerraformTaskV4@4
     displayName: 'Terraform Plan'
