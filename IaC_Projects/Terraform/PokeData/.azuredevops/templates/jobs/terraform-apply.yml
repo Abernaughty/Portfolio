@@ -73,7 +73,7 @@ steps:
     env:
       TF_VAR_repository_token: $(github_token)
 
-  # Produce a quick, human-readable summary and capture outputs
+  # Generate Deployment Summary  
   - task: PowerShell@2
     displayName: 'Generate Deployment Summary'
     env:
@@ -105,6 +105,7 @@ steps:
 
         Get-Content $file | Write-Host
 
+  # Publish artifacts
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Deployment Summary'
     inputs:
@@ -119,21 +120,25 @@ steps:
       artifactName: 'terraform-outputs-${{ parameters.environment }}'
       publishLocation: 'Container'
 
-  # Optional git tag — keep if you like it
+  # Tag Deployment (optional)
   - script: |
       git config user.email "azure-pipeline@maber.io"
       git config user.name "Azure Pipeline"
-      TAG_NAME="${{ parameters.environment }}-$(Build.BuildNumber)"
+      $TAG_NAME="${{ parameters.environment }}-$(Build.BuildNumber)"
       git tag -a "$TAG_NAME" -m "Deployed to ${{ parameters.environment }} by $(Build.RequestedFor)"
       git push origin "$TAG_NAME" || echo "Could not push tag (no permissions)"
       echo "✅ Deployment tagged as: $TAG_NAME"
     displayName: 'Tag Deployment'
     continueOnError: true
 
-  - script: |
-      echo "🎉 Deployment to ${{ parameters.environment }} completed successfully!"
-      echo ""
-      echo "Resources deployed:"
-      terraform state list
+  # Deployment Complete (move workingDirectory under inputs)
+  - task: PowerShell@2
     displayName: 'Deployment Complete'
-    workingDirectory: '${{ parameters.workingDirectory }}'
+    inputs:
+      targetType: inline
+      workingDirectory: '${{ parameters.workingDirectory }}'
+      script: |
+        Write-Host "🎉 Deployment to ${{ parameters.environment }} completed successfully!"
+        Write-Host ""
+        Write-Host "Resources deployed:"
+        terraform state list
