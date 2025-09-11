@@ -123,6 +123,8 @@ stages:
       steps:
       - task: PowerShell@2
         displayName: 'Send Pipeline Status Email (Zoho)'
+        env:
+          ZOHO_SMTP_PASSWORD: $(ZOHO_SMTP_PASSWORD)  
         inputs:
           targetType: 'inline'
           pwsh: true
@@ -131,10 +133,13 @@ stages:
             $fromName = 'PokeData CI'
             $to       = 'mike@maber.io'
 
-            $smtpHost = 'smtp.zoho.com'    # change to smtp.zoho.eu if needed
+            $smtpHost = 'smtp.zoho.com'   # use smtp.zoho.eu if your account is EU
             $smtpUser = 'devops@maber.io'
             $smtpPass = $env:ZOHO_SMTP_PASSWORD
-            if ([string]::IsNullOrWhiteSpace($smtpPass)) { throw 'ZOHO_SMTP_PASSWORD is empty/unavailable' }
+
+            if ([string]::IsNullOrWhiteSpace($smtpPass)) {
+              throw "ZOHO_SMTP_PASSWORD is empty or not accessible."
+            }
 
             [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 
@@ -156,17 +161,24 @@ stages:
             $msg.Body = $body
             $msg.IsBodyHtml = $true
 
-            $client = [System.Net.Mail.SmtpClient]::new($smtpHost, 587)  # STARTTLS
-            $client.DeliveryMethod = [System.Net.Mail.SmtpDeliveryMethod]::Network
-            $client.UseDefaultCredentials = $false
-            $client.EnableSsl = $true
-            $client.Credentials = [System.Net.NetworkCredential]::new($smtpUser, $smtpPass)
+            # Try SSL (587) first; fall back to STARTTLS (465)
+            $send = {
+              param($port)
+              $client = [System.Net.Mail.SmtpClient]::new($smtpHost, $port)
+              $client.DeliveryMethod = [System.Net.Mail.SmtpDeliveryMethod]::Network
+              $client.UseDefaultCredentials = $false
+              $client.EnableSsl = $true
+              $client.Credentials = [System.Net.NetworkCredential]::new($smtpUser, $smtpPass)
+              $client.Send($msg)
+              $client.Dispose()
+            }
 
-            $client.Send($msg)
-            Write-Host ("Mail sent via {0}:{1}" -f $smtpHost, 587)
+            try {
+              $send.(587); Write-Host ("Mail sent via {0}:{1}" -f $smtpHost,587)
+            } catch {
+              Write-Warning ("587 failed: {0}. Trying 465…" -f $_.Exception.Message)
+              $send.(465); Write-Host ("Mail sent via {0}:{1}" -f $smtpHost,465)
+            }
 
-            $client.Dispose()
             $msg.Dispose()
-        env:
-          ZOHO_SMTP_PASSWORD: $(smtpPass)   # your Library/variable name
 
