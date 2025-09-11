@@ -14,7 +14,6 @@ locals {
       Environment = var.environment
       ManagedBy   = "Terraform"
       Module      = "function-app"
-      CreatedDate = timestamp()
     },
     var.tags
   )

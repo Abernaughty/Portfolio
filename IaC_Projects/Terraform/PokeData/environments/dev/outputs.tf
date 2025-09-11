@@ -101,7 +101,7 @@ output "environment" {
 
 output "deployment_timestamp" {
   description = "Timestamp of the deployment"
-  value       = timestamp()
+  value       = var.created_date
 }
 
 # Connection Information Summary

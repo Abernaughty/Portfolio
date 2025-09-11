@@ -183,7 +183,7 @@ locals {
     ManagedBy   = "Terraform"
     Owner       = var.owner
     CostCenter  = var.cost_center
-    CreatedDate = timestamp()
+    CreatedDate = var.created_date
     Repository  = var.github_repository_url
   }
 }

@@ -131,3 +131,10 @@ variable "backup_retention_days" {
   type        = number
   default     = 7 # Minimal for dev
 }
+
+# Infrastructure Metadata
+variable "created_date" {
+  description = "Date when the infrastructure was first created (format: YYYY-MM-DD)"
+  type        = string
+  default     = "2025-01-08" # Date when dev environment was first deployed
+}

@@ -273,7 +273,8 @@ terraform output -json > outputs.json
 - v0.4.1 - Fixed ALL Azure Provider v4.40.0 compatibility issues (Jan 8, 2025)
 - v0.5.0 - Fixed runtime validation errors (Jan 8, 2025)
 - v1.0.0 - INFRASTRUCTURE DEPLOYED TO AZURE (Jan 8, 2025) 🎉
-- **v1.1.0 - AZURE DEVOPS CI/CD PIPELINE CREATED** (Jan 9, 2025) 🚀
+- v1.1.0 - AZURE DEVOPS CI/CD PIPELINE CREATED (Jan 9, 2025) 🚀
+- **v1.2.0 - FIXED TERRAFORM DRIFT ISSUE** (Jan 11, 2025) ✅
 
 ## Success Criteria Progress
 - [x] Module-based architecture
