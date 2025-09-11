@@ -132,7 +132,7 @@ stages:
           scriptLocation: scriptPath
           scriptPath: 'IaC_Projects/Terraform/PokeData/.azuredevops/scripts/send-graph-mail.ps1'
           arguments: >
-            -From ci@maber.io
+            -From devops@maber.io
             -To mike@maber.io
             -Environment $(environment)
             -JobStatus "$(Agent.JobStatus)"
