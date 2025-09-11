@@ -130,7 +130,7 @@ stages:
           azureSubscription: '$(azureServiceConnection)'
           scriptType: pscore
           scriptLocation: scriptPath
-          scriptPath: '.azuredevops/scripts/send-graph-mail.ps1'
+          scriptPath: 'IaC_Projects/Terraform/PokeData/.azuredevops/scripts/send-graph-mail.ps1'
           arguments: >
             -From ci@maber.io
             -To mike@maber.io
