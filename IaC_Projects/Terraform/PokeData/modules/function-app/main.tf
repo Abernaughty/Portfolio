@@ -51,8 +51,7 @@ locals {
       var.runtime_stack.node_version != null ? "node" : (
         var.runtime_stack.python_version != null ? "python" : (
     var.runtime_stack.java_version != null ? "java" : "custom")))
-    "WEBSITE_RUN_FROM_PACKAGE"       = "1"
-    "APPINSIGHTS_INSTRUMENTATIONKEY" = var.application_insights_key != null ? var.application_insights_key : ""
+    "WEBSITE_RUN_FROM_PACKAGE" = "1"
   }
 
   app_settings = merge(local.default_app_settings, var.app_settings)
@@ -143,13 +142,8 @@ resource "azurerm_windows_function_app" "this" {
   virtual_network_subnet_id = var.virtual_network_subnet_id
 
   # Application settings
-  app_settings = merge(
-    local.app_settings,
-    var.application_insights_enabled ? {
-      "APPINSIGHTS_INSTRUMENTATIONKEY"        = var.application_insights_key != null ? var.application_insights_key : azurerm_application_insights.this[0].instrumentation_key
-      "APPLICATIONINSIGHTS_CONNECTION_STRING" = var.application_insights_connection_string != null ? var.application_insights_connection_string : azurerm_application_insights.this[0].connection_string
-    } : {}
-  )
+  # Note: Application Insights settings are configured in site_config block to prevent drift
+  app_settings = local.app_settings
 
   # Managed identity
   dynamic "identity" {
@@ -251,13 +245,8 @@ resource "azurerm_linux_function_app" "this" {
   virtual_network_subnet_id = var.virtual_network_subnet_id
 
   # Application settings
-  app_settings = merge(
-    local.app_settings,
-    var.application_insights_enabled ? {
-      "APPINSIGHTS_INSTRUMENTATIONKEY"        = var.application_insights_key != null ? var.application_insights_key : azurerm_application_insights.this[0].instrumentation_key
-      "APPLICATIONINSIGHTS_CONNECTION_STRING" = var.application_insights_connection_string != null ? var.application_insights_connection_string : azurerm_application_insights.this[0].connection_string
-    } : {}
-  )
+  # Note: Application Insights settings are configured in site_config block to prevent drift
+  app_settings = local.app_settings
 
   # Managed identity
   dynamic "identity" {

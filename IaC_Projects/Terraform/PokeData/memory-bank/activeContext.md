@@ -164,16 +164,25 @@ az staticwebapp show -n pokedata-swa-dev -g pokedata-dev-rg
 ```
 
 ## Recent Activities (Session 5 - January 11, 2025)
-1. ✅ Identified timestamp() causing perpetual drift in pipeline
+1. ✅ Identified and fixed timestamp() causing 8-resource drift in pipeline
 2. ✅ Fixed all 9 occurrences of timestamp() across codebase
 3. ✅ Implemented variable-based solution for creation dates
-4. ✅ Removed timestamps from reusable modules for better portability
-5. ✅ Created comprehensive fix documentation
+4. ✅ Discovered and fixed Application Insights configuration duplication
+5. ✅ Removed App Insights from app_settings (kept in site_config only)
+6. ✅ Created comprehensive documentation for both drift fixes
 
-## Timestamp Drift Fix Summary
-**Problem**: Pipeline showed 8 resources changing on every run due to `timestamp()` in tags
+## Drift Fixes Summary
+### Fix 1: Timestamp Drift (8 resources)
+**Problem**: `timestamp()` in tags caused 8 resources to update every run
 **Solution**: Replaced with static `created_date` variable
-**Result**: No more false drift - only real changes will be detected
+**Result**: Tags no longer change between runs
+
+### Fix 2: Application Insights Drift (1 resource)
+**Problem**: App Insights configured in both app_settings and site_config
+**Solution**: Removed from app_settings, kept only in site_config
+**Result**: Function App no longer shows false changes
+
+**Final Result**: Pipeline now shows "No changes" when infrastructure unchanged ✅
 
 ## Next Session Priorities
 1. **Test the Fix** - Run terraform plan to verify no drift
