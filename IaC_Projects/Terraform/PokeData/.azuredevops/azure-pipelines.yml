@@ -119,8 +119,6 @@ stages:
     jobs:
     - job: SendZohoMail
       displayName: Send status via Zoho SMTP
-    - job: SendZohoMail
-      displayName: Send status via Zoho SMTP
       steps:
       - task: PowerShell@2
         displayName: 'Send Pipeline Status Email (Zoho)'
