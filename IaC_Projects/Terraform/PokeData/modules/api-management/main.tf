@@ -8,7 +8,6 @@ locals {
       Environment = var.environment
       ManagedBy   = "Terraform"
       Module      = "api-management"
-      CreatedDate = timestamp()
     },
     var.tags
   )

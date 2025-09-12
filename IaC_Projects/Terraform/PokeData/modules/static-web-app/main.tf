@@ -8,7 +8,6 @@ locals {
       Environment = var.environment
       ManagedBy   = "Terraform"
       Module      = "static-web-app"
-      CreatedDate = timestamp()
     },
     var.tags
   )

@@ -43,7 +43,7 @@ resource "azurerm_resource_group" "state" {
     Project     = "PokeData"
     ManagedBy   = "Terraform"
     Environment = "Shared"
-    CreatedDate = timestamp()
+    CreatedDate = "2025-01-08"
   }
 }
 
@@ -75,7 +75,7 @@ resource "azurerm_storage_account" "state" {
     Project     = "PokeData"
     ManagedBy   = "Terraform"
     Environment = "Shared"
-    CreatedDate = timestamp()
+    CreatedDate = "2025-01-08"
   }
 }
 

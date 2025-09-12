@@ -10,7 +10,6 @@ locals {
       Environment = var.environment
       ManagedBy   = "Terraform"
       Module      = "cosmos-db"
-      CreatedDate = timestamp()
     },
     var.tags
   )
