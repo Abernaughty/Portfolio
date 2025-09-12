@@ -167,4 +167,4 @@ stages:
             $client.Dispose()
             $msg.Dispose()
         env:
-          ZOHO_SMTP_PASSWORD: $(smtpPass)   # your Library/variable name
+          ZOHO_SMTP_PASSWORD: $(ZOHO_SMTP_PASSWORD)   # your Library/variable name
