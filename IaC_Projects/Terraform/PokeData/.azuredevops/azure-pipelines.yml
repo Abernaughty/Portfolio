@@ -113,28 +113,58 @@ stages:
             parameters:
               environment: $(environment)
 
-  # Stage 5: Notification
   - stage: Notify
     displayName: Send Notifications
-    dependsOn: Test
     condition: always()
     jobs:
-    - job: SendGraphMail
-      displayName: Send status via Microsoft Graph
+    - job: SendZohoMail
+      displayName: Send status via Zoho SMTP
       steps:
-      - checkout: self
-
-      - task: AzureCLI@2
-        displayName: Send Pipeline Status Email (Graph)
+      - task: PowerShell@2
+        displayName: 'Send Pipeline Status Email (Zoho)'
         inputs:
-          azureSubscription: '$(azureServiceConnection)'
-          scriptType: pscore
-          scriptLocation: scriptPath
-          scriptPath: 'IaC_Projects/Terraform/PokeData/.azuredevops/scripts/send-graph-mail.ps1'
-          arguments: >
-            -From devops@maber.io
-            -To mike@maber.io
-            -Environment $(environment)
-            -JobStatus "$(Agent.JobStatus)"
-            -Branch "$(Build.SourceBranchName)"
-            -RequestedFor "$(Build.RequestedFor)"
+          targetType: 'inline'
+          pwsh: true
+          script: |
+            $fromAddr = 'devops@maber.io'
+            $fromName = 'PokeData CI'
+            $to       = 'mike@maber.io'
+
+            $smtpHost = 'smtp.zoho.com'    # change to smtp.zoho.eu if needed
+            $smtpUser = 'devops@maber.io'
+            $smtpPass = $env:ZOHO_SMTP_PASSWORD
+            if ([string]::IsNullOrWhiteSpace($smtpPass)) { throw 'ZOHO_SMTP_PASSWORD is empty/unavailable' }
+
+            [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+
+            $lines = @(
+              "<b>Pipeline Status:</b> $(Agent.JobStatus)<br/>"
+              "<b>Environment:</b> $(environment)<br/>"
+              "<b>Build Number:</b> $(Build.BuildNumber)<br/>"
+              "<b>Commit:</b> $(Build.SourceVersion)<br/>"
+              "<b>Triggered By:</b> $(Build.RequestedFor)<br/>"
+              "<br/>"
+              "<a href='$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)'>View Pipeline</a>"
+            )
+            $body = ($lines -join "`n")
+
+            $msg = [System.Net.Mail.MailMessage]::new()
+            $msg.From = [System.Net.Mail.MailAddress]::new($fromAddr, $fromName)
+            $msg.To.Add($to)
+            $msg.Subject = "PokeData Pipeline - $(environment) - $(Build.SourceBranchName) - $(Agent.JobStatus)"
+            $msg.Body = $body
+            $msg.IsBodyHtml = $true
+
+            $client = [System.Net.Mail.SmtpClient]::new($smtpHost, 587)  # STARTTLS
+            $client.DeliveryMethod = [System.Net.Mail.SmtpDeliveryMethod]::Network
+            $client.UseDefaultCredentials = $false
+            $client.EnableSsl = $true
+            $client.Credentials = [System.Net.NetworkCredential]::new($smtpUser, $smtpPass)
+
+            $client.Send($msg)
+            Write-Host ("Mail sent via {0}:{1}" -f $smtpHost, 587)
+
+            $client.Dispose()
+            $msg.Dispose()
+        env:
+          ZOHO_SMTP_PASSWORD: $(smtpPass)   # your Library/variable name
