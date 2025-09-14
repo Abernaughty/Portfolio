@@ -8,8 +8,8 @@ owner       = "Mike Abernathy"
 cost_center = "Development"
 
 # GitHub Configuration (for Static Web App)
-github_repository_url = "https://github.com/Abernaughty/PokeData"
-github_branch         = "main"
+# github_repository_url = "https://github.com/Abernaughty/PokeData"
+# github_branch         = "main"
 
 # API Management
 apim_publisher_name  = "PokeData Development Team"

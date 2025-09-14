@@ -38,9 +38,9 @@ resource "azurerm_static_web_app" "this" {
   # Note: Build configuration (app_location, api_location, output_location) 
   # is typically configured in the staticwebapp.config.json file in the repository
   # or through GitHub Actions workflow, not in Terraform
-  repository_url    = var.repository_url
-  repository_branch = var.repository_url != "" ? var.repository_branch : null
-  repository_token  = var.repository_url != "" ? var.repository_token : null
+  #repository_url    = var.repository_url
+  #repository_branch = var.repository_url != "" ? var.repository_branch : null
+  #repository_token  = var.repository_url != "" ? var.repository_token : null
 
   # Configuration
   app_settings                       = var.app_settings
