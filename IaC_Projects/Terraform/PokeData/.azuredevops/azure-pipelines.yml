@@ -39,6 +39,13 @@ variables:
   - name: githubServiceConnection
     value: 'PokeData Repo Service Connection'
 
+resources:
+  repositories:
+    - repository: pokedata_app
+      type: github
+      name: Abernaughty/PokeData
+      endpoint: $(githubServiceConnection)
+
 pool:
   name: Default
   # vmImage: 'ubuntu-latest'
@@ -64,7 +71,45 @@ stages:
             parameters:
               workingDirectory: $(workingDirectory)
 
-  # Stage 2: Plan
+  # Stage 2: Build Application
+  - stage: BuildApp
+    displayName: 'Build Function App'
+    jobs:
+      - job: Build
+        displayName: 'Build Node.js Function App'
+        steps:
+          - checkout: self
+          - checkout: pokedata_app
+          - task: NodeTool@0
+            displayName: 'Use Node.js 18.x'
+            inputs:
+              versionSpec: '18.x'
+          - script: |
+              npm install
+              npm run build
+            displayName: 'Install dependencies and build'
+            workingDirectory: '$(Build.SourcesDirectory)/pokedata_app/PokeDataFunc'
+          - task: ArchiveFiles@2
+            displayName: 'Archive function app files'
+            inputs:
+              rootFolderOrFile: '$(Build.SourcesDirectory)/pokedata_app/PokeDataFunc'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/PokeDataFunc.zip'
+              replaceExistingArchive: true
+              verbose: true
+>>>>>>>
+              exclude: |
+                **/node_modules/**
+                **/.vscode/**
+                .env
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Function App artifact'
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)/PokeDataFunc.zip'
+              ArtifactName: 'functionapp'
+
+  # Stage 3: Plan
   - stage: Plan
     displayName: 'Terraform Plan'
     dependsOn: Validate
@@ -99,8 +144,31 @@ stages:
                     terraformVersion: $(terraformVersion)
                     environment: $(environment)
                     artifactName: $(artifactName)
+      - deployment: DeployApp
+        displayName: 'Deploy Function App to Dev'
+        environment: 'dev'
+        dependsOn: DeployDev
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadBuildArtifacts@1
+                  displayName: 'Download Function App artifact'
+                  inputs:
+                    buildType: 'current'
+                    downloadType: 'single'
+                    artifactName: 'functionapp'
+                    downloadPath: '$(System.ArtifactsDirectory)'
+                - task: AzureFunctionApp@2
+                  displayName: 'Deploy Function App'
+                  inputs:
+                    azureSubscription: $(azureServiceConnection)
+                    appName: 'pokedata-func-$(environment)'
+                    package: '$(System.ArtifactsDirectory)/functionapp/PokeDataFunc.zip'
+                    appSettings: '-COSMOS_DB_CONNECTION_STRING $(COSMOS_DB_CONNECTION_STRING)'
 
-  # Stage 4: Post-Deployment Tests
+
+  # Stage 5: Post-Deployment Tests
   - stage: Test
     displayName: 'Post-Deployment Tests'
     dependsOn: Deploy
