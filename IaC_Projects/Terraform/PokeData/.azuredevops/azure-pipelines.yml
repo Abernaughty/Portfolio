@@ -123,7 +123,7 @@ stages:
               environment: $(environment)
               artifactName: $(artifactName)
 
-  # Stage 3: Deploy (Only on main branch)
+  # Stage 4: Deploy (Only on main branch)
   - stage: Deploy
     displayName: 'Deploy to Dev'
     dependsOn: Plan
