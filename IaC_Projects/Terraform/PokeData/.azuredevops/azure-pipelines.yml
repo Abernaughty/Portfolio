@@ -126,7 +126,9 @@ stages:
   # Stage 4: Deploy (Only on main branch)
   - stage: Deploy
     displayName: 'Deploy to Dev'
-    dependsOn: Plan
+    dependsOn: 
+      - Plan
+      - BuildApp
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
     jobs:
       - deployment: DeployDev
