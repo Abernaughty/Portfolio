@@ -97,8 +97,6 @@ stages:
               archiveType: 'zip'
               archiveFile: '$(Build.ArtifactStagingDirectory)/PokeDataFunc.zip'
               replaceExistingArchive: true
-              verbose: true
->>>>>>>
               exclude: |
                 **/node_modules/**
                 **/.vscode/**
