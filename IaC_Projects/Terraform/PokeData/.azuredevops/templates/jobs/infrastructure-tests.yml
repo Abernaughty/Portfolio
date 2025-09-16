@@ -113,11 +113,13 @@ steps:
           Write-Host "⚠️ Could not retrieve function list: $($_.Exception.Message)"
         }
 
-  - task: PowerShell@2
+  - task: AzureCLI@2
     displayName: 'Test Function API Endpoints'
     inputs:
-      targetType: inline
-      script: |
+      azureSubscription: '$(azureServiceConnection)'
+      scriptType: pscore
+      scriptLocation: inlineScript
+      inlineScript: |
         $ErrorActionPreference = 'Continue'  # Continue on errors to test all endpoints
         Write-Host "## Testing Function API Endpoints"
         
