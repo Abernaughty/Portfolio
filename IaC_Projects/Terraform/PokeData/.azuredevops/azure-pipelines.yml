@@ -168,9 +168,9 @@ stages:
                 Write-Host "Ready to build real PokeData functions!" -ForegroundColor Green
           
           - task: NodeTool@0
-            displayName: 'Use Node.js 18.x'
+            displayName: 'Use Node.js 22.x'
             inputs:
-              versionSpec: '18.x'
+              versionSpec: '22.x'
           
           - task: PowerShell@2
             displayName: 'Install pnpm'
