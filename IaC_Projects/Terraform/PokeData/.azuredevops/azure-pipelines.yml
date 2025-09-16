@@ -85,8 +85,25 @@ stages:
             inputs:
               versionSpec: '18.x'
           - script: |
-              npm install
-              npm run build
+              echo "=== Debugging Repository Structure ==="
+              echo "Build.SourcesDirectory: $(Build.SourcesDirectory)"
+              ls -la "$(Build.SourcesDirectory)"
+              echo ""
+              echo "=== Checking pokedata_app directory ==="
+              ls -la "$(Build.SourcesDirectory)/pokedata_app" || echo "pokedata_app directory not found"
+              echo ""
+              echo "=== Checking PokeDataFunc directory ==="
+              ls -la "$(Build.SourcesDirectory)/pokedata_app/PokeDataFunc" || echo "PokeDataFunc directory not found"
+            displayName: 'Debug directory structure'
+          - script: |
+              npm install -g pnpm
+              echo "pnpm version: $(pnpm --version)"
+            displayName: 'Install pnpm'
+          - script: |
+              echo "=== Installing dependencies with pnpm ==="
+              pnpm install
+              echo "=== Building with pnpm ==="
+              pnpm run build
             displayName: 'Install dependencies and build'
             workingDirectory: '$(Build.SourcesDirectory)/pokedata_app/PokeDataFunc'
           - task: ArchiveFiles@2
