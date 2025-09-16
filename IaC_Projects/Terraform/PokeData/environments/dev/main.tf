@@ -74,23 +74,18 @@ module "function_app" {
   storage_account_name = ""
   storage_account_key  = ""
 
-  # Runtime configuration - using Node.js for the PokeData application
-  runtime_stack = {
-    node_version = "18"
-  }
+  # OS type for Windows Function App
   os_type = "Windows"
 
   # Dev uses consumption plan
   # The module will automatically select the right SKU based on environment
 
-  # Application settings
+  # Application settings - Node.js runtime is hardcoded in module
   app_settings = {
-    "FUNCTIONS_WORKER_RUNTIME" = "node"
-    "WEBSITE_RUN_FROM_PACKAGE" = "1"
-    "CosmosDb__Endpoint"       = module.cosmos_db.endpoint
-    "CosmosDb__Key"            = module.cosmos_db.primary_key
-    "CosmosDb__DatabaseName"   = "PokemonData"
-    "CosmosDb__ContainerName"  = "Cards"
+    "CosmosDb__Endpoint"      = module.cosmos_db.endpoint
+    "CosmosDb__Key"           = module.cosmos_db.primary_key
+    "CosmosDb__DatabaseName"  = "PokemonData"
+    "CosmosDb__ContainerName" = "Cards"
   }
 
   # CORS settings for dev

@@ -45,12 +45,9 @@ locals {
   # Determine if we need to create a service plan
   create_service_plan = var.service_plan_id == null
 
-  # Build app settings with defaults
+  # Build app settings with defaults - simplified for Node.js
   default_app_settings = {
-    "FUNCTIONS_WORKER_RUNTIME" = var.runtime_stack.dotnet_version != null ? "dotnet" : (
-      var.runtime_stack.node_version != null ? "node" : (
-        var.runtime_stack.python_version != null ? "python" : (
-    var.runtime_stack.java_version != null ? "java" : "custom")))
+    "FUNCTIONS_WORKER_RUNTIME" = "node"
     "WEBSITE_RUN_FROM_PACKAGE" = "1"
   }
 
@@ -184,16 +181,11 @@ resource "azurerm_windows_function_app" "this" {
       var.application_insights_key != null ? var.application_insights_key : azurerm_application_insights.this[0].instrumentation_key
     ) : null
 
-    # Runtime stack - only include the runtime that's actually set
+    # Runtime stack - simplified for Node.js only
     dynamic "application_stack" {
       for_each = [1]
       content {
-        dotnet_version              = var.runtime_stack.dotnet_version
-        use_dotnet_isolated_runtime = var.runtime_stack.dotnet_version != null ? var.runtime_stack.use_dotnet_isolated_runtime : null
-        java_version                = var.runtime_stack.java_version
-        node_version                = var.runtime_stack.node_version
-        powershell_core_version     = var.runtime_stack.powershell_core_version
-        use_custom_runtime          = var.runtime_stack.use_custom_runtime
+        node_version = "18"
       }
     }
 
@@ -286,16 +278,11 @@ resource "azurerm_linux_function_app" "this" {
       var.application_insights_key != null ? var.application_insights_key : azurerm_application_insights.this[0].instrumentation_key
     ) : null
 
-    # Runtime stack - only include the runtime that's actually set
+    # Runtime stack - simplified for Node.js only
     dynamic "application_stack" {
       for_each = [1]
       content {
-        dotnet_version          = var.runtime_stack.dotnet_version
-        java_version            = var.runtime_stack.java_version
-        node_version            = var.runtime_stack.node_version
-        python_version          = var.runtime_stack.python_version
-        powershell_core_version = var.runtime_stack.powershell_core_version
-        use_custom_runtime      = var.runtime_stack.use_custom_runtime
+        node_version = "18"
       }
     }
 
