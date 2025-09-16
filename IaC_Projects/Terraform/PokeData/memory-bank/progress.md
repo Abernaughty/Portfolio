@@ -1,14 +1,14 @@
 # PokeData Portfolio Progress Tracker
 
 ## Project Timeline
-- **Project Start**: January 5, 2025
-- **Current Phase**: Infrastructure Deployed → CI/CD Setup
+- **Project Start**: September 13, 2025
+- **Current Phase**: CI/CD Pipeline Operational → Application Deployment
 - **Target Completion**: 2-3 weeks (for job applications)
 - **Purpose**: DevOps/Cloud Engineer Portfolio Project
 
 ## Completed Tasks ✅
 
-### January 5, 2025 - Session 1
+### September 13, 2025 - Session 1
 1. **Infrastructure Analysis**
    - ✅ Reviewed existing Terraform files
    - ✅ Identified all Azure resources in use
@@ -26,7 +26,7 @@
    - ✅ Documented project goals and context
    - ✅ Established patterns and preferences
 
-### January 5, 2025 - Session 2
+### September 13, 2025 - Session 2
 4. **Terraform Module Development**
    - ✅ Created professional module structure
    - ✅ **Cosmos DB Module** - Complete with all features
@@ -41,7 +41,7 @@
    - ✅ Added dynamic resource creation patterns
    - ✅ Implemented consistent tagging strategy
 
-### January 8, 2025 - Session 2 (Earlier)
+### September 14, 2025 - Session 3
 6. **Azure Provider Compatibility Fixes**
    - ✅ Fixed all Azure Provider v4.40.0 compatibility issues
    - ✅ Fixed Cosmos DB partition_key_paths array format
@@ -49,7 +49,6 @@
    - ✅ Fixed API Management module arguments
    - ✅ Created state storage configuration
 
-### January 8, 2025 - Session 3
 7. **Deployment Issues Resolution**
    - ✅ Fixed Function App runtime stack validation errors
    - ✅ Resolved health check configuration issues
@@ -66,7 +65,7 @@
    - ✅ Application Insights configured
    - ✅ All networking and CORS configured
 
-### January 9, 2025 - Session 4 (Current)
+### September 14, 2025 - Session 4
 9. **Azure DevOps CI/CD Pipeline**
    - ✅ Created comprehensive multi-stage pipeline
    - ✅ Implemented validation and security scanning stages
@@ -78,13 +77,49 @@
    - ✅ Added Git tagging for deployments
    - ✅ Created detailed pipeline documentation
 
-## In Progress 🔄
+### September 15, 2025 - Session 5
+10. **Terraform Drift Resolution**
+    - ✅ Identified and fixed timestamp() causing 8-resource drift in pipeline
+    - ✅ Fixed all 9 occurrences of timestamp() across codebase
+    - ✅ Implemented variable-based solution for creation dates
+    - ✅ Discovered and fixed Application Insights configuration duplication
+    - ✅ Removed App Insights from app_settings (kept in site_config only)
+    - ✅ Created comprehensive documentation for both drift fixes
 
-### Post-Deployment Tasks
-- ✅ Created Azure DevOps pipeline structure
-- 🔄 Configure service connections in Azure DevOps
-- 🔄 Create variable groups
-- 🔄 Test pipeline execution
+### September 15, 2025 - Session 6
+11. **Pipeline Multi-Repository Checkout Enhancement**
+    - ✅ Analyzed persistent multi-repository checkout issues in Azure DevOps pipeline
+    - ✅ Enhanced repository checkout configuration with explicit parameters
+    - ✅ Implemented comprehensive PowerShell-based verification system
+    - ✅ Added detailed environment variable logging and path verification
+    - ✅ Converted all build steps to PowerShell for consistency and better error handling
+    - ✅ Added structured error messages with troubleshooting guidance
+    - ✅ Committed and pushed enhanced pipeline (commit 6602cf4)
+
+### September 16, 2025 - Session 8 (Current)
+12. **Multi-Repository Checkout Path Parameter Fix**
+    - ✅ Identified root cause: Custom `path: 'pokedata_app'` parameter causing silent checkout failures
+    - ✅ Confirmed repository access working (manual git clone successful with 3,784 objects)
+    - ✅ Verified service connection properly configured in same Azure DevOps org/project
+    - ✅ Removed path parameter to use Azure DevOps default directory naming (`PokeData`)
+    - ✅ Updated all directory references from `pokedata_app` to `PokeData`
+    - ✅ Fixed build script paths and archive configuration
+    - ✅ Committed and pushed fix (commit 9464d67) - simplified configuration
+    - ✅ **PIPELINE DEPLOYMENT SUCCESSFUL** - All stages completed successfully
+    - ❌ **NEW ISSUE**: Functions not visible in Azure portal despite successful deployment
+
+## Current Status 🔄
+
+### Infrastructure Status
+- ✅ **FULLY DEPLOYED** - All infrastructure resources successfully created in Azure
+- ✅ **CI/CD PIPELINE OPERATIONAL** - Azure DevOps pipeline working with clean multi-repo checkout
+- 🔄 **Function Code Deployment** - Infrastructure ready, application code pending
+
+### Pipeline Status
+- ✅ Multi-repository checkout working correctly
+- ✅ Service connection properly configured
+- ✅ Clean architecture without mock fallbacks
+- ✅ Comprehensive error handling and verification
 
 ## Pending Tasks 📋 (Prioritized for Portfolio Impact)
 
@@ -95,32 +130,7 @@
   - [ ] Test API endpoints
   - [ ] Verify Cosmos DB connectivity
 
-### Phase 2: CI/CD Implementation (Week 1 - Highest Impact)
-- [x] **Azure DevOps Pipeline**
-  - [x] Created comprehensive YAML pipeline
-  - [x] Built multi-stage deployment pipeline
-  - [x] Added security scanning stages
-  - [x] Implemented infrastructure testing
-  - [ ] Set up service connections in Azure DevOps
-  - [ ] Configure variable groups
-  - [ ] Add approval gates for production
-- [ ] **GitHub Actions for Functions**
-  - [ ] Create workflow for function deployment
-  - [ ] Add build and test stages
-  - [ ] Implement deployment slots
-
-### Phase 3: Testing Framework (Week 1-2)
-- [ ] **Terratest Setup**
-  - [ ] Create Go test project structure
-  - [ ] Write unit tests for each module
-  - [ ] Create integration test suite
-  - [ ] Add test results to pipeline
-- [x] **Security Scanning**
-  - [x] Integrated tfsec in pipeline
-  - [x] Added Checkov scanning
-  - [ ] Implement SAST/DAST for application code
-
-### Phase 4: Multi-Environment (Week 2)
+### Phase 2: Multi-Environment Implementation (Week 1)
 - [ ] **Staging Environment**
   - [ ] Copy dev configuration
   - [ ] Adjust SKUs and settings
@@ -130,7 +140,18 @@
   - [ ] Implement private endpoints
   - [ ] Add monitoring and alerts
 
-### Phase 5: Documentation & Visualization (Week 2)
+### Phase 3: Testing Framework (Week 1-2)
+- [ ] **Terratest Setup**
+  - [ ] Create Go test project structure
+  - [ ] Write unit tests for each module
+  - [ ] Create integration test suite
+  - [ ] Add test results to pipeline
+- [ ] **Enhanced Security Scanning**
+  - [ ] Implement SAST/DAST for application code
+  - [ ] Add compliance scanning
+  - [ ] Create security dashboard
+
+### Phase 4: Documentation & Visualization (Week 2)
 - [ ] **Architecture Diagrams**
   - [ ] Create infrastructure diagram
   - [ ] Document data flow
@@ -148,11 +169,15 @@
 3. ~~Function App runtime stack~~ ✅ FIXED
 4. ~~Health check configuration~~ ✅ FIXED
 5. ~~GitHub token permissions~~ ✅ FIXED
+6. ~~Terraform drift from timestamp()~~ ✅ FIXED
+7. ~~Application Insights duplication~~ ✅ FIXED
+8. ~~Multi-repository checkout failures~~ ✅ FIXED
+9. ~~Service connection configuration~~ ✅ FIXED
 
 ### Current Limitations
 1. **No Function Code**: Infrastructure ready, code not deployed
-2. **No CI/CD**: Manual deployment only at present
-3. **Single Environment**: Only dev deployed so far
+2. **Single Environment**: Only dev deployed so far
+3. **Limited Testing**: Infrastructure tests not yet implemented
 
 ## Decisions Made 💡
 
@@ -170,6 +195,13 @@
 4. ✅ **Security Approach**: Managed identities enabled
 5. ✅ **Monitoring**: Application Insights integrated
 
+### CI/CD Decisions
+1. ✅ **Primary Platform**: Azure DevOps for enterprise integration
+2. ✅ **Multi-Repository Strategy**: Clean checkout without fallbacks
+3. ✅ **Service Connection**: Preferred over personal access tokens
+4. ✅ **Pipeline Architecture**: Template-based for reusability
+5. ✅ **Error Handling**: Fail-fast with detailed diagnostics
+
 ## Lessons Learned 📚
 
 ### Deployment Insights
@@ -179,12 +211,19 @@
 4. **Health Check Rules**: Must be null or within valid range (2-10)
 5. **GitHub Token Scope**: Needs `workflow` permission for Actions
 
+### CI/CD Pipeline Insights
+1. **Service Connections vs PATs**: Service connections more reliable for enterprise
+2. **Multi-Repository Checkout**: Requires explicit configuration and verification
+3. **Mock Fallbacks**: Create technical debt, better to fix root cause
+4. **PowerShell Consistency**: Better error handling than mixed shell commands
+5. **Fail-Fast Principle**: Early detection prevents downstream issues
+
 ### Debugging Best Practices
-1. **Incremental Fixes**: Fix one error type at a time
-2. **Read Error Messages Carefully**: Azure provider gives specific requirements
-3. **Use Dynamic Blocks**: Better for conditional attributes
-4. **Test Locally First**: Use terraform plan before apply
-5. **Document Fixes**: Keep track of what worked
+1. **Systematic Approach**: Test each component individually
+2. **Curl Testing**: Verify tokens and endpoints outside pipeline
+3. **Service Connection Validation**: Use Azure DevOps built-in validation
+4. **Clean Architecture**: Remove workarounds once root cause fixed
+5. **Documentation**: Record solutions for future reference
 
 ## Portfolio Metrics to Showcase 📊
 
@@ -193,7 +232,8 @@
 - **Resources Deployed**: 13 Azure resources
 - **Deployment Time**: ~35 minutes (including API Management)
 - **Cost Optimization**: $0/month using free tiers
-- **Errors Resolved**: 15+ validation and runtime errors
+- **Errors Resolved**: 20+ validation, runtime, and pipeline errors
+- **Pipeline Cleanup**: 159 lines of technical debt removed
 
 ### Skills Demonstrated (Completed)
 - ✅ Infrastructure as Code (Terraform modules)
@@ -203,7 +243,9 @@
 - ✅ Security best practices
 - ✅ Cost optimization strategies
 - ✅ GitHub integration
-- ⏳ CI/CD Pipelines (next)
+- ✅ CI/CD Pipelines (Azure DevOps)
+- ✅ Multi-repository management
+- ✅ Service connection configuration
 - ⏳ Infrastructure testing (next)
 - ⏳ Multi-environment management (upcoming)
 
@@ -212,7 +254,9 @@
 2. ✅ **Full Stack IaC**: "Deployed complete application infrastructure"
 3. ✅ **Modularization**: "Created reusable Terraform modules"
 4. ✅ **Cost Optimization**: "Achieved $0/month dev environment"
-5. ⏳ **CI/CD**: "Implemented multi-stage pipelines" (upcoming)
+5. ✅ **CI/CD Implementation**: "Built and debugged multi-stage Azure DevOps pipeline"
+6. ✅ **Systematic Debugging**: "Resolved multi-repository checkout issues through methodical testing"
+7. ✅ **Technical Debt Reduction**: "Cleaned up 159 lines of workaround code"
 
 ## Resource Inventory 📦
 
@@ -235,14 +279,23 @@
 | static-web-app | ✅ Complete | ⏳ Pending | ⏳ Need README |
 | api-management | ✅ Complete | ⏳ Pending | ⏳ Need README |
 
+### Pipeline Status
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Multi-repo checkout | ✅ Working | Clean implementation |
+| Service connection | ✅ Configured | Validated in Azure DevOps |
+| Security scanning | ✅ Active | tfsec and Checkov |
+| Infrastructure tests | ⏳ Pending | Template ready |
+| Notifications | ✅ Active | Email alerts configured |
+
 ## Next Session Focus 🎯
 
 When returning to this project, prioritize:
 1. **Deploy function code** to make the app functional
-2. **Create Azure DevOps pipeline** for infrastructure automation
-3. **Add staging environment** to demonstrate multi-env management
-4. **Implement Terratest** for infrastructure testing
-5. **Create architecture diagrams** for documentation
+2. **Add staging environment** to demonstrate multi-env management
+3. **Implement Terratest** for infrastructure testing
+4. **Create architecture diagrams** for documentation
+5. **Record demo video** for portfolio presentation
 
 ## Quick Commands Reference
 ```bash
@@ -263,18 +316,23 @@ az apim show -n pokedata-apim-dev -g pokedata-dev-rg
 
 # Get all outputs
 terraform output -json > outputs.json
+
+# Test pipeline
+az pipelines run --name "PokeData Infrastructure Pipeline"
 ```
 
 ## Version History
-- v0.1.0 - Initial memory bank creation (Jan 5, 2025)
-- v0.2.0 - Pivoted to career portfolio focus (Jan 5, 2025)
-- v0.3.0 - Completed all Terraform modules (Jan 5, 2025)
-- v0.4.0 - Created environment structure and state storage (Jan 8, 2025)
-- v0.4.1 - Fixed ALL Azure Provider v4.40.0 compatibility issues (Jan 8, 2025)
-- v0.5.0 - Fixed runtime validation errors (Jan 8, 2025)
-- v1.0.0 - INFRASTRUCTURE DEPLOYED TO AZURE (Jan 8, 2025) 🎉
-- v1.1.0 - AZURE DEVOPS CI/CD PIPELINE CREATED (Jan 9, 2025) 🚀
-- **v1.2.0 - FIXED TERRAFORM DRIFT ISSUE** (Jan 11, 2025) ✅
+- v0.1.0 - Initial memory bank creation (Sep 13, 2025)
+- v0.2.0 - Pivoted to career portfolio focus (Sep 13, 2025)
+- v0.3.0 - Completed all Terraform modules (Sep 13, 2025)
+- v0.4.0 - Created environment structure and state storage (Sep 14, 2025)
+- v0.4.1 - Fixed ALL Azure Provider v4.40.0 compatibility issues (Sep 14, 2025)
+- v0.5.0 - Fixed runtime validation errors (Sep 14, 2025)
+- v1.0.0 - INFRASTRUCTURE DEPLOYED TO AZURE (Sep 14, 2025) 🎉
+- v1.1.0 - AZURE DEVOPS CI/CD PIPELINE CREATED (Sep 14, 2025) 🚀
+- v1.2.0 - FIXED TERRAFORM DRIFT ISSUE (Sep 15, 2025) ✅
+- v1.3.0 - ENHANCED PIPELINE MULTI-REPO CHECKOUT (Sep 15, 2025) 🔧
+- **v1.4.0 - PIPELINE SERVICE CONNECTION RESOLVED** (Sep 16, 2025) ✅
 
 ## Success Criteria Progress
 - [x] Module-based architecture
@@ -282,7 +340,7 @@ terraform output -json > outputs.json
 - [x] Security best practices
 - [x] Professional structure
 - [x] Infrastructure deployment
-- [ ] CI/CD pipeline
+- [x] CI/CD pipeline
 - [ ] Infrastructure testing
 - [x] Live demo environment (infrastructure ready)
 - [ ] Complete documentation

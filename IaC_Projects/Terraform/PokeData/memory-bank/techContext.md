@@ -143,7 +143,7 @@ tags = {
   Owner       = var.owner
   CostCenter  = var.cost_center
   ManagedBy   = "Terraform"
-  CreatedDate = timestamp()
+  CreatedDate = var.created_date  # Fixed: Use variable instead of timestamp()
 }
 ```
 

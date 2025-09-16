@@ -330,3 +330,258 @@ module "tenant_resources" {
   }
   shared_keyvault_id = module.shared_services.keyvault_id
 }
+```
+
+## CI/CD Troubleshooting Patterns
+
+### Multi-Repository Checkout Pattern (Azure DevOps)
+```yaml
+# Clean implementation without fallbacks
+stages:
+- stage: Checkout
+  jobs:
+  - job: MultiRepoCheckout
+    steps:
+    # Primary repository (infrastructure)
+    - checkout: self
+      displayName: 'Checkout Portfolio Infrastructure'
+      clean: true
+      
+    # Secondary repository (application code)
+    - checkout: git://PokeData/PokeData@main
+      displayName: 'Checkout PokeData Application'
+      clean: true
+      
+    # Immediate verification with fail-fast
+    - powershell: |
+        Write-Host "Verifying repository structure..."
+        
+        # Check primary repo structure
+        if (-not (Test-Path "$(Agent.BuildDirectory)/s/IaC_Projects")) {
+          Write-Error "Portfolio repository structure not found at expected path"
+          Write-Host "Expected: $(Agent.BuildDirectory)/s/IaC_Projects"
+          Write-Host "Available paths:"
+          Get-ChildItem "$(Agent.BuildDirectory)/s" -Directory | ForEach-Object { Write-Host "  - $($_.Name)" }
+          exit 1
+        }
+        
+        # Check secondary repo structure
+        if (-not (Test-Path "$(Agent.BuildDirectory)/s/PokeData")) {
+          Write-Error "PokeData repository not found at expected path"
+          Write-Host "Expected: $(Agent.BuildDirectory)/s/PokeData"
+          Write-Host "Available paths:"
+          Get-ChildItem "$(Agent.BuildDirectory)/s" -Directory | ForEach-Object { Write-Host "  - $($_.Name)" }
+          exit 1
+        }
+        
+        Write-Host "✅ Repository structure verified successfully"
+      displayName: 'Verify Repository Structure'
+      failOnStderr: true
+```
+
+### Service Connection Troubleshooting Pattern
+```yaml
+# Service connection validation and debugging
+- powershell: |
+    Write-Host "=== Service Connection Diagnostics ==="
+    
+    # Test GitHub API access
+    try {
+      $headers = @{
+        'Authorization' = "token $(GITHUB_TOKEN)"
+        'User-Agent' = 'Azure-DevOps-Pipeline'
+      }
+      
+      # Test basic API access
+      $response = Invoke-RestMethod -Uri "https://api.github.com/user" -Headers $headers
+      Write-Host "✅ GitHub API access successful for user: $($response.login)"
+      
+      # Test repository access
+      $repoResponse = Invoke-RestMethod -Uri "https://api.github.com/repos/$(GITHUB_OWNER)/$(REPO_NAME)" -Headers $headers
+      Write-Host "✅ Repository access confirmed: $($repoResponse.full_name)"
+      
+      # Verify token scopes
+      $scopeHeader = $response.PSObject.Properties | Where-Object { $_.Name -eq 'X-OAuth-Scopes' }
+      if ($scopeHeader) {
+        Write-Host "Token scopes: $($scopeHeader.Value)"
+      }
+      
+    } catch {
+      Write-Error "❌ GitHub API access failed: $($_.Exception.Message)"
+      Write-Host "Troubleshooting steps:"
+      Write-Host "1. Verify service connection configuration in Azure DevOps"
+      Write-Host "2. Check GitHub token has required scopes: repo, workflow, admin:repo_hook"
+      Write-Host "3. Ensure token is not expired"
+      Write-Host "4. Validate variable group contains correct token"
+      exit 1
+    }
+  displayName: 'Validate Service Connection'
+  env:
+    GITHUB_TOKEN: $(GITHUB_PAT)
+```
+
+### Pipeline Debugging Methodology Pattern
+```yaml
+# Systematic debugging approach
+- powershell: |
+    Write-Host "=== Environment Diagnostics ==="
+    
+    # Agent information
+    Write-Host "Agent Information:"
+    Write-Host "  Build Directory: $(Agent.BuildDirectory)"
+    Write-Host "  Source Directory: $(Build.SourcesDirectory)"
+    Write-Host "  Agent Name: $(Agent.Name)"
+    Write-Host "  Agent OS: $(Agent.OS)"
+    
+    # Available environment variables
+    Write-Host "`nRelevant Environment Variables:"
+    Get-ChildItem Env: | Where-Object { 
+      $_.Name -like "*BUILD*" -or 
+      $_.Name -like "*AGENT*" -or 
+      $_.Name -like "*GITHUB*" 
+    } | Sort-Object Name | ForEach-Object {
+      if ($_.Name -like "*TOKEN*" -or $_.Name -like "*PAT*") {
+        Write-Host "  $($_.Name): [REDACTED]"
+      } else {
+        Write-Host "  $($_.Name): $($_.Value)"
+      }
+    }
+    
+    # Directory structure
+    Write-Host "`nDirectory Structure:"
+    if (Test-Path "$(Agent.BuildDirectory)") {
+      Get-ChildItem "$(Agent.BuildDirectory)" -Recurse -Directory | 
+        Select-Object -First 20 | 
+        ForEach-Object { Write-Host "  $($_.FullName)" }
+    }
+    
+  displayName: 'Environment Diagnostics'
+  condition: failed() # Only run on failure
+```
+
+### Clean Architecture Pattern (No Mock Fallbacks)
+```yaml
+# Production-ready approach without workarounds
+parameters:
+- name: enableFallbacks
+  type: boolean
+  default: false # Never enable fallbacks in production
+
+stages:
+- stage: Build
+  condition: succeeded()
+  jobs:
+  - job: Infrastructure
+    steps:
+    # Real implementation only
+    - checkout: self
+    - checkout: git://PokeData/PokeData@main
+    
+    # No conditional fallbacks - fail fast if prerequisites not met
+    - powershell: |
+        # Verify all prerequisites
+        $prerequisites = @(
+          @{ Path = "$(Agent.BuildDirectory)/s/IaC_Projects"; Name = "Infrastructure Code" },
+          @{ Path = "$(Agent.BuildDirectory)/s/PokeData"; Name = "Application Code" }
+        )
+        
+        foreach ($prereq in $prerequisites) {
+          if (-not (Test-Path $prereq.Path)) {
+            Write-Error "❌ Missing prerequisite: $($prereq.Name) at $($prereq.Path)"
+            Write-Host "This indicates a configuration issue that must be resolved."
+            Write-Host "Do not add fallback logic - fix the root cause."
+            exit 1
+          }
+          Write-Host "✅ $($prereq.Name) found at $($prereq.Path)"
+        }
+      displayName: 'Verify Prerequisites (No Fallbacks)'
+```
+
+### Azure DevOps Variable Group Management Pattern
+```yaml
+# Secure variable management
+variables:
+- group: terraform-dev # Contains sensitive values
+- name: environment
+  value: dev
+- name: location
+  value: centralus
+
+# Variable validation
+- powershell: |
+    Write-Host "=== Variable Validation ==="
+    
+    # Check required variables are present
+    $requiredVars = @('GITHUB_PAT', 'ARM_CLIENT_ID', 'ARM_CLIENT_SECRET', 'ARM_SUBSCRIPTION_ID', 'ARM_TENANT_ID')
+    
+    foreach ($var in $requiredVars) {
+      $value = [Environment]::GetEnvironmentVariable($var)
+      if ([string]::IsNullOrEmpty($value)) {
+        Write-Error "❌ Required variable '$var' is not set or empty"
+        Write-Host "Check variable group 'terraform-dev' configuration"
+        exit 1
+      } else {
+        Write-Host "✅ Variable '$var' is configured"
+      }
+    }
+    
+    # Validate token format (basic check)
+    $githubPat = [Environment]::GetEnvironmentVariable('GITHUB_PAT')
+    if ($githubPat -and -not $githubPat.StartsWith('ghp_')) {
+      Write-Warning "⚠️ GitHub PAT format may be incorrect (should start with 'ghp_')"
+    }
+    
+  displayName: 'Validate Variables'
+  env:
+    GITHUB_PAT: $(GITHUB_PAT)
+    ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+    ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+    ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+    ARM_TENANT_ID: $(ARM_TENANT_ID)
+```
+
+### Error Handling and Recovery Pattern
+```yaml
+# Comprehensive error handling
+- powershell: |
+    try {
+      Write-Host "Executing main operation..."
+      
+      # Main operation here
+      terraform plan -var-file="environments/dev/terraform.tfvars"
+      
+      if ($LASTEXITCODE -ne 0) {
+        throw "Terraform plan failed with exit code $LASTEXITCODE"
+      }
+      
+      Write-Host "✅ Operation completed successfully"
+      
+    } catch {
+      Write-Error "❌ Operation failed: $($_.Exception.Message)"
+      
+      # Diagnostic information
+      Write-Host "`n=== Diagnostic Information ==="
+      Write-Host "Working Directory: $(Get-Location)"
+      Write-Host "Terraform Version: $(terraform version)"
+      Write-Host "Available Files:"
+      Get-ChildItem -Name | ForEach-Object { Write-Host "  - $_" }
+      
+      # Specific troubleshooting based on error type
+      if ($_.Exception.Message -like "*authentication*") {
+        Write-Host "`n=== Authentication Troubleshooting ==="
+        Write-Host "1. Verify service principal credentials"
+        Write-Host "2. Check Azure subscription access"
+        Write-Host "3. Validate service connection configuration"
+      } elseif ($_.Exception.Message -like "*not found*") {
+        Write-Host "`n=== File/Resource Troubleshooting ==="
+        Write-Host "1. Verify file paths and repository structure"
+        Write-Host "2. Check checkout configuration"
+        Write-Host "3. Ensure all required files are present"
+      }
+      
+      # Always exit with error to fail the pipeline
+      exit 1
+    }
+  displayName: 'Execute with Error Handling'
+  failOnStderr: true
+```

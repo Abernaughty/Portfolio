@@ -74,10 +74,9 @@ module "function_app" {
   storage_account_name = ""
   storage_account_key  = ""
 
-  # Runtime configuration - using the correct structure
+  # Runtime configuration - using Node.js for the PokeData application
   runtime_stack = {
-    dotnet_version              = "v8.0"
-    use_dotnet_isolated_runtime = true
+    node_version = "18"
   }
   os_type = "Windows"
 
@@ -86,7 +85,7 @@ module "function_app" {
 
   # Application settings
   app_settings = {
-    "FUNCTIONS_WORKER_RUNTIME" = "dotnet-isolated"
+    "FUNCTIONS_WORKER_RUNTIME" = "node"
     "WEBSITE_RUN_FROM_PACKAGE" = "1"
     "CosmosDb__Endpoint"       = module.cosmos_db.endpoint
     "CosmosDb__Key"            = module.cosmos_db.primary_key
@@ -119,7 +118,7 @@ module "static_web_app" {
   # GitHub configuration
   repository_url    = var.github_repository_url
   repository_branch = var.github_branch    # Fixed: use repository_branch instead of branch
-  repository_token  = var.repository_token # Added: pass the GitHub token
+  # repository_token  = var.repository_token # Token stored in terraform-dev pipeline variable group
 
   # Build configuration
   app_location    = "/"
