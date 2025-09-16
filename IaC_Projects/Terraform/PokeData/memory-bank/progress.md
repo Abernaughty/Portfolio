@@ -108,15 +108,44 @@
     - ✅ **PIPELINE DEPLOYMENT SUCCESSFUL** - All stages completed successfully
     - ❌ **NEW ISSUE**: Functions not visible in Azure portal despite successful deployment
 
-### September 16, 2025 - Session 9 (Current)
+### September 16, 2025 - Session 9
 13. **Node.js Runtime Modernization**
     - ✅ Updated Node.js version from 18 (EOS) to 22 throughout codebase
     - ✅ **Function App Module**: Updated both Windows and Linux runtime stacks to `node_version = "~22"`
     - ✅ **Removed .NET References**: Cleaned up all .NET framework references to prevent confusion
     - ✅ **Simplified Configuration**: Removed complex `runtime_stack` variable, hardcoded Node.js 22
     - ✅ **Legacy File Update**: Fixed `pokedata-func.tf` from .NET 8.0 to Node.js 22
+    - ✅ **CI/CD Pipeline Update**: Updated Azure DevOps pipeline NodeTool from 18.x to 22.x
     - ✅ **Validation Successful**: Terraform configuration validates correctly with new runtime
-    - ✅ **Files Updated**: `modules/function-app/main.tf`, `modules/function-app/variables.tf`, `pokedata-func.tf`
+    - ✅ **Files Updated**: `modules/function-app/main.tf`, `modules/function-app/variables.tf`, `pokedata-func.tf`, `.azuredevops/azure-pipelines.yml`
+    - ⏳ **Function Visibility Issue**: Deferred to future troubleshooting session
+
+### September 16, 2025 - Session 12
+14. **Package Manager Migration (NPM → PNPM)**
+    - ✅ **Root Cause Analysis**: Confirmed infrastructure deployed but no function code deployed
+    - ✅ **Package Manager Audit**: Verified PokeData uses PNPM, Portfolio doesn't need package manager
+    - ✅ **GitHub Workflow Migration**: Updated `.github/workflows/deploy-function.yml` from npm to pnpm
+    - ✅ **PNPM Setup**: Added `pnpm/action-setup@v2` with version compatibility fix (10.9.0 → 8.15.4)
+    - ✅ **Node.js Cache**: Updated `actions/setup-node@v3` to use `cache: 'pnpm'`
+    - ✅ **Command Migration**: Replaced all npm commands with pnpm equivalents:
+      - `npm install` → `pnpm install --frozen-lockfile`
+      - `npm run build` → `pnpm run build`
+      - `npm test` → `pnpm test`
+    - ✅ **TypeScript Build Fix**: Removed `--if-present` flags causing build failures
+    - ✅ **Workflow Success**: Build and Test job completed successfully
+    - ✅ **Deployment Success**: Deploy to Staging job completed successfully
+    - ✅ **Migration Documentation**: Created comprehensive `npm-to-pnpm-migration.md` guide
+    - ✅ **Package Manager Consistency**: Achieved across all deployment workflows
+
+### September 16, 2025 - Session 13
+15. **Azure Function Deployment Troubleshooting**
+    - ✅ **Root Cause Identified**: Missing `AzureWebJobsFeatureFlags = "EnableWorkerIndexing"` app setting
+    - ✅ **Deployment Analysis**: Compared working GitHub Actions vs broken Azure DevOps pipeline
+    - ✅ **Configuration Audit**: Verified Azure Function App has no functions deployed (empty list)
+    - ✅ **Terraform Issue**: Function-app module missing critical v4 programming model app setting
+    - ✅ **Pipeline Issue**: Azure DevOps deployment not setting required app settings
+    - ✅ **Comprehensive Documentation**: Created `azure-function-deployment-troubleshooting.md`
+    - ⏳ **Next Session**: Apply Terraform fixes and redeploy via Azure DevOps pipeline
 
 ## Current Status 🔄
 
@@ -183,6 +212,9 @@
 7. ~~Application Insights duplication~~ ✅ FIXED
 8. ~~Multi-repository checkout failures~~ ✅ FIXED
 9. ~~Service connection configuration~~ ✅ FIXED
+10. ~~Package manager inconsistency~~ ✅ FIXED
+11. ~~GitHub workflow npm references~~ ✅ FIXED
+12. ~~PNPM lockfile compatibility~~ ✅ FIXED
 
 ### Current Limitations
 1. **No Function Code**: Infrastructure ready, code not deployed
@@ -267,6 +299,7 @@
 5. ✅ **CI/CD Implementation**: "Built and debugged multi-stage Azure DevOps pipeline"
 6. ✅ **Systematic Debugging**: "Resolved multi-repository checkout issues through methodical testing"
 7. ✅ **Technical Debt Reduction**: "Cleaned up 159 lines of workaround code"
+8. ✅ **Package Manager Migration**: "Successfully migrated GitHub workflows from npm to pnpm with version compatibility fixes"
 
 ## Resource Inventory 📦
 
@@ -342,7 +375,8 @@ az pipelines run --name "PokeData Infrastructure Pipeline"
 - v1.1.0 - AZURE DEVOPS CI/CD PIPELINE CREATED (Sep 14, 2025) 🚀
 - v1.2.0 - FIXED TERRAFORM DRIFT ISSUE (Sep 15, 2025) ✅
 - v1.3.0 - ENHANCED PIPELINE MULTI-REPO CHECKOUT (Sep 15, 2025) 🔧
-- **v1.4.0 - PIPELINE SERVICE CONNECTION RESOLVED** (Sep 16, 2025) ✅
+- v1.4.0 - PIPELINE SERVICE CONNECTION RESOLVED (Sep 16, 2025) ✅
+- **v1.5.0 - PACKAGE MANAGER MIGRATION COMPLETE** (Sep 16, 2025) 📦
 
 ## Success Criteria Progress
 - [x] Module-based architecture

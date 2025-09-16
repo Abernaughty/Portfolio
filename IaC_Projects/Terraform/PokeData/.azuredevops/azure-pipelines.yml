@@ -274,7 +274,10 @@ stages:
                     azureSubscription: $(azureServiceConnection)
                     appName: 'pokedata-func-$(environment)'
                     package: '$(System.ArtifactsDirectory)/functionapp/PokeDataFunc.zip'
-                    appSettings: '-COSMOS_DB_CONNECTION_STRING $(COSMOS_DB_CONNECTION_STRING)'
+                    appSettings: |
+                      -COSMOS_DB_CONNECTION_STRING $(COSMOS_DB_CONNECTION_STRING)
+                      -AzureWebJobsFeatureFlags EnableWorkerIndexing
+                      -WEBSITE_NODE_DEFAULT_VERSION ~22
 
 
   # Stage 5: Post-Deployment Tests

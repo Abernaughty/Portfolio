@@ -47,8 +47,10 @@ locals {
 
   # Build app settings with defaults - simplified for Node.js
   default_app_settings = {
-    "FUNCTIONS_WORKER_RUNTIME" = "node"
-    "WEBSITE_RUN_FROM_PACKAGE" = "1"
+    "FUNCTIONS_WORKER_RUNTIME"     = "node"
+    "WEBSITE_RUN_FROM_PACKAGE"     = "1"
+    "AzureWebJobsFeatureFlags"     = "EnableWorkerIndexing"  # CRITICAL: Required for v4 programming model
+    "WEBSITE_NODE_DEFAULT_VERSION" = "~22"                   # Ensure Node.js version consistency
   }
 
   app_settings = merge(local.default_app_settings, var.app_settings)
