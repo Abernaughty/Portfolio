@@ -149,7 +149,7 @@ stages:
                 
                 # Verify required files
                 $packageJson = Join-Path $funcPath "package.json"
-                $pnpmLock = Join-Path $funcPath "pnpm-lock.yaml"
+                $packageLock = Join-Path $funcPath "package-lock.json"
                 
                 if (-not (Test-Path $packageJson)) {
                     Write-Host "ERROR: package.json not found!" -ForegroundColor Red
@@ -157,11 +157,11 @@ stages:
                 }
                 Write-Host "✓ package.json found" -ForegroundColor Green
                 
-                if (-not (Test-Path $pnpmLock)) {
-                    Write-Host "ERROR: pnpm-lock.yaml not found!" -ForegroundColor Red
+                if (-not (Test-Path $packageLock)) {
+                    Write-Host "ERROR: package-lock.json not found!" -ForegroundColor Red
                     exit 1
                 }
-                Write-Host "✓ pnpm-lock.yaml found" -ForegroundColor Green
+                Write-Host "✓ package-lock.json found" -ForegroundColor Green
                 
                 Write-Host ""
                 Write-Host "=== REPOSITORY VERIFICATION SUCCESSFUL ===" -ForegroundColor Green
@@ -173,27 +173,17 @@ stages:
               versionSpec: '22.x'
           
           - task: PowerShell@2
-            displayName: 'Install pnpm'
-            inputs:
-              targetType: 'inline'
-              pwsh: true
-              script: |
-                Write-Host "Installing pnpm globally..." -ForegroundColor Yellow
-                npm install -g pnpm
-                Write-Host "pnpm version: $(pnpm --version)" -ForegroundColor Green
-          
-          - task: PowerShell@2
-            displayName: 'Install dependencies and build'
+            displayName: 'Install dependencies and build with npm'
             inputs:
               targetType: 'inline'
               pwsh: true
               workingDirectory: '$(Build.SourcesDirectory)/PokeData/PokeDataFunc'
               script: |
-                Write-Host "=== Installing dependencies with pnpm ===" -ForegroundColor Yellow
-                pnpm install
+                Write-Host "=== Installing dependencies with npm ===" -ForegroundColor Yellow
+                npm ci
                 
-                Write-Host "=== Building with pnpm ===" -ForegroundColor Yellow
-                pnpm run build
+                Write-Host "=== Building with npm ===" -ForegroundColor Yellow
+                npm run build
                 
                 Write-Host "=== Build completed successfully ===" -ForegroundColor Green
           
