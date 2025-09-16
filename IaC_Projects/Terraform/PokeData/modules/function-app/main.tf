@@ -185,7 +185,7 @@ resource "azurerm_windows_function_app" "this" {
     dynamic "application_stack" {
       for_each = [1]
       content {
-        node_version = "18"
+        node_version = "~18"
       }
     }
 
@@ -282,7 +282,7 @@ resource "azurerm_linux_function_app" "this" {
     dynamic "application_stack" {
       for_each = [1]
       content {
-        node_version = "18"
+        node_version = "~18"
       }
     }
 
