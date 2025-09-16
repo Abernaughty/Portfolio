@@ -44,7 +44,7 @@ resources:
     - repository: pokedata_app
       type: github
       name: Abernaughty/PokeData
-      endpoint: $(githubServiceConnection)
+      endpoint: "PokeData Repo Service Connection"
 
 pool:
   name: Default
