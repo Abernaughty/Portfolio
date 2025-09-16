@@ -78,51 +78,130 @@ stages:
       - job: Build
         displayName: 'Build Node.js Function App'
         steps:
+          # Enhanced checkout with explicit configuration
           - checkout: self
             displayName: 'Checkout Portfolio repository'
+            clean: true
+            fetchDepth: 1
+          
           - checkout: pokedata_app
             displayName: 'Checkout PokeData repository'
+            clean: true
+            fetchDepth: 1
+            path: 'pokedata_app'
+          
+          # Comprehensive repository verification
+          - task: PowerShell@2
+            displayName: 'Comprehensive Repository Verification'
+            inputs:
+              targetType: 'inline'
+              pwsh: true
+              script: |
+                Write-Host "=== COMPREHENSIVE REPOSITORY CHECKOUT VERIFICATION ===" -ForegroundColor Cyan
+                Write-Host ""
+                
+                # Environment variables
+                Write-Host "=== Environment Variables ===" -ForegroundColor Yellow
+                Write-Host "Build.SourcesDirectory: $env:BUILD_SOURCESDIRECTORY"
+                Write-Host "Agent.BuildDirectory: $env:AGENT_BUILDDIRECTORY"
+                Write-Host "System.DefaultWorkingDirectory: $env:SYSTEM_DEFAULTWORKINGDIRECTORY"
+                Write-Host ""
+                
+                # Check main sources directory
+                Write-Host "=== Main Sources Directory Contents ===" -ForegroundColor Yellow
+                if (Test-Path $env:BUILD_SOURCESDIRECTORY) {
+                    Get-ChildItem $env:BUILD_SOURCESDIRECTORY -Force | Format-Table Name, Mode, Length, LastWriteTime
+                } else {
+                    Write-Host "ERROR: BUILD_SOURCESDIRECTORY does not exist!" -ForegroundColor Red
+                    exit 1
+                }
+                Write-Host ""
+                
+                # Check for pokedata_app directory
+                $pokeDataPath = Join-Path $env:BUILD_SOURCESDIRECTORY "pokedata_app"
+                Write-Host "=== Checking PokeData Repository ===" -ForegroundColor Yellow
+                Write-Host "Expected path: $pokeDataPath"
+                
+                if (Test-Path $pokeDataPath) {
+                    Write-Host "SUCCESS: pokedata_app directory found!" -ForegroundColor Green
+                    Write-Host "Contents of pokedata_app:"
+                    Get-ChildItem $pokeDataPath -Force | Format-Table Name, Mode, Length, LastWriteTime
+                } else {
+                    Write-Host "ERROR: pokedata_app directory not found!" -ForegroundColor Red
+                    Write-Host "This indicates the external repository checkout failed."
+                    Write-Host ""
+                    Write-Host "Troubleshooting information:" -ForegroundColor Yellow
+                    Write-Host "1. Service connection permissions"
+                    Write-Host "2. Repository access rights"
+                    Write-Host "3. Agent configuration"
+                    exit 1
+                }
+                Write-Host ""
+                
+                # Check for PokeDataFunc directory
+                $funcPath = Join-Path $pokeDataPath "PokeDataFunc"
+                Write-Host "=== Checking Function App Directory ===" -ForegroundColor Yellow
+                Write-Host "Expected path: $funcPath"
+                
+                if (Test-Path $funcPath) {
+                    Write-Host "SUCCESS: PokeDataFunc directory found!" -ForegroundColor Green
+                    Write-Host "Contents of PokeDataFunc:"
+                    Get-ChildItem $funcPath -Force | Format-Table Name, Mode, Length, LastWriteTime
+                    
+                    # Check for package.json and pnpm-lock.yaml
+                    $packageJson = Join-Path $funcPath "package.json"
+                    $pnpmLock = Join-Path $funcPath "pnpm-lock.yaml"
+                    
+                    if (Test-Path $packageJson) {
+                        Write-Host "✓ package.json found" -ForegroundColor Green
+                    } else {
+                        Write-Host "✗ package.json NOT found" -ForegroundColor Red
+                    }
+                    
+                    if (Test-Path $pnpmLock) {
+                        Write-Host "✓ pnpm-lock.yaml found" -ForegroundColor Green
+                    } else {
+                        Write-Host "✗ pnpm-lock.yaml NOT found" -ForegroundColor Red
+                    }
+                } else {
+                    Write-Host "ERROR: PokeDataFunc directory not found!" -ForegroundColor Red
+                    Write-Host "The repository was checked out but doesn't contain the expected structure."
+                    exit 1
+                }
+                
+                Write-Host ""
+                Write-Host "=== VERIFICATION COMPLETE - ALL CHECKS PASSED ===" -ForegroundColor Green
+          
           - task: NodeTool@0
             displayName: 'Use Node.js 18.x'
             inputs:
               versionSpec: '18.x'
-          - script: |
-              echo "=== Debugging Repository Structure ==="
-              echo "Build.SourcesDirectory: $(Build.SourcesDirectory)"
-              dir "$(Build.SourcesDirectory)"
-              echo.
-              echo "=== Checking pokedata_app directory ==="
-              if exist "$(Build.SourcesDirectory)\pokedata_app" (
-                echo "SUCCESS: pokedata_app directory found"
-                dir "$(Build.SourcesDirectory)\pokedata_app"
-              ) else (
-                echo "ERROR: pokedata_app directory not found"
-                echo "Available directories:"
-                dir "$(Build.SourcesDirectory)" /AD
-                echo "CHECKOUT FAILED - Repository not accessible"
-                exit 1
-              )
-              echo.
-              echo "=== Checking PokeDataFunc directory ==="
-              if exist "$(Build.SourcesDirectory)\pokedata_app\PokeDataFunc" (
-                echo "SUCCESS: PokeDataFunc directory found"
-                dir "$(Build.SourcesDirectory)\pokedata_app\PokeDataFunc"
-              ) else (
-                echo "ERROR: PokeDataFunc directory not found"
-                exit 1
-              )
-            displayName: 'Verify repository checkout'
-          - script: |
-              npm install -g pnpm
-              echo "pnpm version: $(pnpm --version)"
+          
+          - task: PowerShell@2
             displayName: 'Install pnpm'
-          - script: |
-              echo "=== Installing dependencies with pnpm ==="
-              pnpm install
-              echo "=== Building with pnpm ==="
-              pnpm run build
+            inputs:
+              targetType: 'inline'
+              pwsh: true
+              script: |
+                Write-Host "Installing pnpm globally..." -ForegroundColor Yellow
+                npm install -g pnpm
+                Write-Host "pnpm version: $(pnpm --version)" -ForegroundColor Green
+          
+          - task: PowerShell@2
             displayName: 'Install dependencies and build'
-            workingDirectory: '$(Build.SourcesDirectory)\pokedata_app\PokeDataFunc'
+            inputs:
+              targetType: 'inline'
+              pwsh: true
+              workingDirectory: '$(Build.SourcesDirectory)/pokedata_app/PokeDataFunc'
+              script: |
+                Write-Host "=== Installing dependencies with pnpm ===" -ForegroundColor Yellow
+                pnpm install
+                
+                Write-Host "=== Building with pnpm ===" -ForegroundColor Yellow
+                pnpm run build
+                
+                Write-Host "=== Build completed successfully ===" -ForegroundColor Green
+          
           - task: ArchiveFiles@2
             displayName: 'Archive function app files'
             inputs:
@@ -135,6 +214,7 @@ stages:
                 **/node_modules/**
                 **/.vscode/**
                 .env
+          
           - task: PublishBuildArtifacts@1
             displayName: 'Publish Function App artifact'
             inputs:
