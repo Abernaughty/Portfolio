@@ -79,7 +79,9 @@ stages:
         displayName: 'Build Node.js Function App'
         steps:
           - checkout: self
+            displayName: 'Checkout Portfolio repository'
           - checkout: pokedata_app
+            displayName: 'Checkout PokeData repository'
           - task: NodeTool@0
             displayName: 'Use Node.js 18.x'
             inputs:
@@ -91,22 +93,25 @@ stages:
               echo.
               echo "=== Checking pokedata_app directory ==="
               if exist "$(Build.SourcesDirectory)\pokedata_app" (
-                echo "pokedata_app directory found"
+                echo "SUCCESS: pokedata_app directory found"
                 dir "$(Build.SourcesDirectory)\pokedata_app"
               ) else (
                 echo "ERROR: pokedata_app directory not found"
                 echo "Available directories:"
                 dir "$(Build.SourcesDirectory)" /AD
+                echo "CHECKOUT FAILED - Repository not accessible"
+                exit 1
               )
               echo.
               echo "=== Checking PokeDataFunc directory ==="
               if exist "$(Build.SourcesDirectory)\pokedata_app\PokeDataFunc" (
-                echo "PokeDataFunc directory found"
+                echo "SUCCESS: PokeDataFunc directory found"
                 dir "$(Build.SourcesDirectory)\pokedata_app\PokeDataFunc"
               ) else (
                 echo "ERROR: PokeDataFunc directory not found"
+                exit 1
               )
-            displayName: 'Debug directory structure'
+            displayName: 'Verify repository checkout'
           - script: |
               npm install -g pnpm
               echo "pnpm version: $(pnpm --version)"
