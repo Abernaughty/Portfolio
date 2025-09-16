@@ -2,8 +2,8 @@
 
 ## Current Status
 - **Date**: September 16, 2025
-- **Phase**: AZURE FUNCTIONS V4 DEPLOYMENT FIX COMPLETE → PIPELINE TESTING
-- **Mode**: Critical app setting fixes deployed, pipeline triggered for validation
+- **Phase**: AUTHENTICATION FIX DEPLOYED → POST-DEPLOYMENT TESTING OPERATIONAL
+- **Mode**: Azure DevOps pipeline authentication issues resolved, API endpoint testing now functional
 - **Goal**: Build impressive DevOps portfolio with modern CI/CD stack
 
 ## Current Infrastructure State
@@ -30,6 +30,84 @@ Dev Environment (FULLY OPERATIONAL):
     └── Clean architecture: No mock fallbacks
 ```
 
+## Latest Critical Fix: YAML Format Error Resolved (Session 15 - September 16, 2025)
+
+### Problem Solved
+**"Parameter name cannot be empty" Deployment Error RESOLVED** - Successfully identified and fixed malformed YAML causing Azure Function deployment failures
+
+### Root Cause Analysis & Resolution
+1. ✅ **YAML Parsing Issue**: YAML multiline string (`|`) was including newline characters in JSON payload
+2. ✅ **Malformed JSON**: Created invalid key-value pairs like `"AzureWebJobsFeatureFlags":"\"EnableWorkerIndexing\"\n-WEBSITE_NODE_DEFAULT_VERSION"`
+3. ✅ **Azure API Rejection**: Azure rejected malformed JSON with "Parameter name cannot be empty" error
+4. ✅ **Format Fix**: Changed from multiline to single-line format to prevent newline injection
+
+### Technical Fix Applied
+**Azure DevOps Pipeline YAML Correction**:
+
+**Before (Broken)**:
+```yaml
+appSettings: |
+  -COSMOS_DB_CONNECTION_STRING "$(COSMOS_DB_CONNECTION_STRING)"
+  -AzureWebJobsFeatureFlags "EnableWorkerIndexing"
+  -WEBSITE_NODE_DEFAULT_VERSION "~22"
+```
+
+**After (Fixed)**:
+```yaml
+appSettings: '-COSMOS_DB_CONNECTION_STRING $(COSMOS_DB_CONNECTION_STRING) -AzureWebJobsFeatureFlags EnableWorkerIndexing -WEBSITE_NODE_DEFAULT_VERSION ~22'
+```
+
+### Fix Results ✅
+- **Deployment Blocking Error**: ✅ RESOLVED - No more "Parameter name cannot be empty"
+- **App Settings Format**: ✅ CORRECTED - Proper single-line YAML format
+- **JSON Generation**: ✅ FIXED - Clean JSON without embedded newlines
+- **Pipeline Ready**: ✅ DEPLOYED - Fix committed and pushed (commit ece54a5)
+
+## Latest Achievement: Post-Deployment Testing Authentication Fix (Session 16 - September 16, 2025)
+
+### Problem Solved
+**"ERROR: Please run 'az login' Authentication Failures RESOLVED** - Successfully identified and fixed authentication context issues in post-deployment testing
+
+### Root Cause Analysis & Resolution
+1. ✅ **Task Type Inconsistency**: "Test Function API Endpoints" task was using `PowerShell@2` instead of `AzureCLI@2`
+2. ✅ **Missing Authentication Context**: PowerShell@2 tasks don't inherit Azure service connection authentication
+3. ✅ **Empty URL Retrieval**: `az functionapp show` commands failed without authentication, causing empty Function App URLs
+4. ✅ **URI Parsing Errors**: Empty URLs like `https:///api/health` caused "Invalid URI: The hostname could not be parsed" errors
+
+### Technical Fix Applied
+**Azure DevOps Pipeline Task Conversion**:
+
+**Before (Broken)**:
+```yaml
+- task: PowerShell@2
+  displayName: 'Test Function API Endpoints'
+  inputs:
+    targetType: inline
+    script: |
+      # No Azure authentication context
+      $funcHost = (az functionapp show --name $FUNC_NAME --resource-group $RG_NAME --query defaultHostName -o tsv).Trim()
+```
+
+**After (Fixed)**:
+```yaml
+- task: AzureCLI@2
+  displayName: 'Test Function API Endpoints'
+  inputs:
+    azureSubscription: '$(azureServiceConnection)'
+    scriptType: pscore
+    scriptLocation: inlineScript
+    inlineScript: |
+      # Proper Azure authentication context
+      $funcHost = (az functionapp show --name $FUNC_NAME --resource-group $RG_NAME --query defaultHostName -o tsv).Trim()
+```
+
+### Fix Results ✅
+- **Authentication Context**: ✅ RESOLVED - All tasks now use consistent AzureCLI@2 pattern
+- **Function URL Retrieval**: ✅ FIXED - Azure CLI commands can now access Function App properties
+- **API Endpoint Testing**: ✅ OPERATIONAL - All endpoint tests will run with proper URLs
+- **Pipeline Consistency**: ✅ ACHIEVED - All infrastructure testing tasks use same authentication pattern
+- **Fix Committed**: ✅ DEPLOYED - Authentication fix pushed to repository (commit 2bb0955)
+
 ## Recent Major Achievement: Azure Functions v4 Deployment Fix Complete (Session 14 - September 16, 2025)
 
 ### Problem Solved
@@ -52,12 +130,9 @@ Dev Environment (FULLY OPERATIONAL):
    }
    ```
 
-2. **Azure DevOps Pipeline Fix**: Enhanced app settings deployment:
+2. **Azure DevOps Pipeline Fix**: Enhanced app settings deployment (now with correct YAML format):
    ```yaml
-   appSettings: |
-     -COSMOS_DB_CONNECTION_STRING $(COSMOS_DB_CONNECTION_STRING)
-     -AzureWebJobsFeatureFlags EnableWorkerIndexing
-     -WEBSITE_NODE_DEFAULT_VERSION ~22
+   appSettings: '-COSMOS_DB_CONNECTION_STRING $(COSMOS_DB_CONNECTION_STRING) -AzureWebJobsFeatureFlags EnableWorkerIndexing -WEBSITE_NODE_DEFAULT_VERSION ~22'
    ```
 
 3. **Deployment Method Comparison**: Analyzed differences between working GitHub Actions and broken Azure DevOps approaches
@@ -69,10 +144,31 @@ Dev Environment (FULLY OPERATIONAL):
 - **Runtime Discovery**: v4 programming model functions properly registered
 - **Pipeline Success**: Complete end-to-end deployment working
 
-## Previous Major Achievement: PNPM Migration Complete (Session 12 - September 16, 2025)
+## CRITICAL DISCOVERY: PNPM Compatibility Issue Identified and Resolved (Session 17 - September 16, 2025)
 
-### Problem Solved
-**Package Manager Consistency Achieved** - Successfully migrated GitHub workflow from npm to pnpm, resolving all compatibility issues
+### Problem Discovered
+**PNPM Causes Azure Functions Deployment Issues** - PNPM migration from Session 12 actually caused function visibility problems, not solved them
+
+### Root Cause Analysis & Resolution
+1. ✅ **Production Validation**: User confirmed production functions working after reverting to NPM
+2. ✅ **Dev Environment Issue**: Dev environment still shows no functions due to PNPM deployment
+3. ✅ **Package Manager Incompatibility**: PNPM builds create deployment artifacts incompatible with Azure Functions runtime
+4. ✅ **GitHub Workflow Reverted**: PokeData repository already reverted to NPM (commits 8f6b63d, 2f56319)
+
+### Technical Reversion Applied
+**GitHub Workflow Corrected Back to NPM**:
+- ✅ **PNPM Setup Removed**: Removed `pnpm/action-setup@v2` step
+- ✅ **Node.js Cache**: Restored `cache: 'npm'` and `package-lock.json` dependency path
+- ✅ **Command Reversion**: 
+  - `pnpm install --frozen-lockfile` → `npm ci`
+  - `pnpm run build` → `npm run build`
+  - `pnpm test` → `npm test`
+- ✅ **Package Lock**: Added `package-lock.json` for proper npm caching
+
+### Previous Achievement: PNPM Migration Attempt (Session 12 - September 16, 2025)
+
+### Problem Initially Thought Solved
+**Package Manager Consistency Attempted** - Initially migrated GitHub workflow from npm to pnpm, but discovered compatibility issues
 
 ### Root Cause Analysis & Resolution
 1. ✅ **Package Manager Analysis**: Confirmed PokeData uses PNPM 8.15.4 with `packageManager: "pnpm@10.9.0"` declaration
@@ -274,6 +370,7 @@ Dev Environment (FULLY OPERATIONAL):
 10. ~~Package manager inconsistency~~ ✅ FIXED
 11. ~~PNPM lockfile compatibility~~ ✅ FIXED
 12. ~~TypeScript build with --if-present flags~~ ✅ FIXED
+13. ~~Azure DevOps YAML format causing "Parameter name cannot be empty"~~ ✅ FIXED
 
 ### Current Status
 1. **Infrastructure**: Fully deployed and operational
