@@ -78,192 +78,68 @@ stages:
       - job: Build
         displayName: 'Build Node.js Function App'
         steps:
-          # Primary checkout - Portfolio repository
+          # Checkout repositories using service connection
           - checkout: self
             displayName: 'Checkout Portfolio repository'
             clean: true
             fetchDepth: 1
           
-          # Service Connection Diagnostics
-          - task: PowerShell@2
-            displayName: 'Service Connection Diagnostics'
-            inputs:
-              targetType: 'inline'
-              pwsh: true
-              script: |
-                Write-Host "=== SERVICE CONNECTION DIAGNOSTICS ===" -ForegroundColor Cyan
-                Write-Host ""
-                Write-Host "Service Connection Name: $(githubServiceConnection)" -ForegroundColor Yellow
-                Write-Host "Repository: Abernaughty/PokeData" -ForegroundColor Yellow
-                Write-Host "Expected checkout path: pokedata_app" -ForegroundColor Yellow
-                Write-Host ""
-                Write-Host "If the next checkout step fails, check:" -ForegroundColor Yellow
-                Write-Host "1. Service connection exists and is active" -ForegroundColor White
-                Write-Host "2. Service connection has repository access permissions" -ForegroundColor White
-                Write-Host "3. GitHub token has not expired" -ForegroundColor White
-                Write-Host "4. Repository is accessible and not private without proper permissions" -ForegroundColor White
-                Write-Host ""
+          - checkout: pokedata_app
+            displayName: 'Checkout PokeData repository'
+            clean: true
+            fetchDepth: 1
+            path: 'pokedata_app'
           
-          # Attempt external repository checkout with error handling
+          # Verify repository structure
           - task: PowerShell@2
-            displayName: 'Attempt External Repository Checkout'
+            displayName: 'Verify Repository Structure'
             inputs:
               targetType: 'inline'
               pwsh: true
               script: |
-                Write-Host "=== ATTEMPTING EXTERNAL REPOSITORY CHECKOUT ===" -ForegroundColor Cyan
-                Write-Host ""
-                
-                # Try to checkout using git directly as fallback
-                try {
-                    Write-Host "Attempting git clone as fallback method..." -ForegroundColor Yellow
-                    
-                    # Create pokedata_app directory
-                    $pokeDataPath = Join-Path $env:BUILD_SOURCESDIRECTORY "pokedata_app"
-                    New-Item -ItemType Directory -Path $pokeDataPath -Force | Out-Null
-                    
-                    # Change to the directory
-                    Set-Location $pokeDataPath
-                    
-                    # Clone the repository
-                    Write-Host "Cloning https://github.com/Abernaughty/PokeData.git..." -ForegroundColor Yellow
-                    git clone https://github.com/Abernaughty/PokeData.git . --depth 1
-                    
-                    if ($LASTEXITCODE -eq 0) {
-                        Write-Host "SUCCESS: Repository cloned successfully!" -ForegroundColor Green
-                        Write-Host "Contents of cloned repository:" -ForegroundColor Green
-                        Get-ChildItem . -Force | Format-Table Name, Mode, Length, LastWriteTime
-                    } else {
-                        Write-Host "ERROR: Git clone failed with exit code $LASTEXITCODE" -ForegroundColor Red
-                        throw "Git clone failed"
-                    }
-                } catch {
-                    Write-Host "ERROR: Failed to clone repository: $($_.Exception.Message)" -ForegroundColor Red
-                    Write-Host ""
-                    Write-Host "=== FALLBACK: CREATING MOCK STRUCTURE ===" -ForegroundColor Yellow
-                    Write-Host "Creating minimal structure to continue pipeline testing..." -ForegroundColor Yellow
-                    
-                    # Create mock structure for testing
-                    $mockFuncPath = Join-Path $pokeDataPath "PokeDataFunc"
-                    New-Item -ItemType Directory -Path $mockFuncPath -Force | Out-Null
-                    
-                    # Create mock package.json
-                    $packageJson = @{
-                        name = "pokedata-func"
-                        version = "1.0.0"
-                        scripts = @{
-                            build = "echo 'Mock build completed'"
-                            start = "echo 'Mock start'"
-                        }
-                        dependencies = @{}
-                    } | ConvertTo-Json -Depth 3
-                    
-                    $packageJson | Out-File -FilePath (Join-Path $mockFuncPath "package.json") -Encoding UTF8
-                    
-                    # Create mock pnpm-lock.yaml
-                    "lockfileVersion: 5.4" | Out-File -FilePath (Join-Path $mockFuncPath "pnpm-lock.yaml") -Encoding UTF8
-                    
-                    # Create mock source files
-                    New-Item -ItemType Directory -Path (Join-Path $mockFuncPath "src") -Force | Out-Null
-                    "// Mock TypeScript function`nexport default function handler() { return 'Hello World'; }" | Out-File -FilePath (Join-Path $mockFuncPath "src" "index.ts") -Encoding UTF8
-                    
-                    Write-Host "Mock structure created successfully!" -ForegroundColor Green
-                    Write-Host "This allows the pipeline to continue for testing purposes." -ForegroundColor Yellow
-                    Write-Host ""
-                    Write-Host "IMPORTANT: Fix the service connection to use real repository!" -ForegroundColor Red
-                }
-          
-          # Repository verification with enhanced diagnostics
-          - task: PowerShell@2
-            displayName: 'Enhanced Repository Verification'
-            inputs:
-              targetType: 'inline'
-              pwsh: true
-              script: |
-                Write-Host "=== ENHANCED REPOSITORY VERIFICATION ===" -ForegroundColor Cyan
-                Write-Host ""
-                
-                # Environment variables
-                Write-Host "=== Environment Variables ===" -ForegroundColor Yellow
-                Write-Host "Build.SourcesDirectory: $env:BUILD_SOURCESDIRECTORY"
-                Write-Host "Agent.BuildDirectory: $env:AGENT_BUILDDIRECTORY"
-                Write-Host "System.DefaultWorkingDirectory: $env:SYSTEM_DEFAULTWORKINGDIRECTORY"
-                Write-Host ""
-                
-                # Check main sources directory
-                Write-Host "=== Main Sources Directory Contents ===" -ForegroundColor Yellow
-                if (Test-Path $env:BUILD_SOURCESDIRECTORY) {
-                    Get-ChildItem $env:BUILD_SOURCESDIRECTORY -Force | Format-Table Name, Mode, Length, LastWriteTime
-                } else {
-                    Write-Host "ERROR: BUILD_SOURCESDIRECTORY does not exist!" -ForegroundColor Red
-                    exit 1
-                }
+                Write-Host "=== REPOSITORY STRUCTURE VERIFICATION ===" -ForegroundColor Cyan
                 Write-Host ""
                 
                 # Check for pokedata_app directory
                 $pokeDataPath = Join-Path $env:BUILD_SOURCESDIRECTORY "pokedata_app"
-                Write-Host "=== Checking PokeData Repository ===" -ForegroundColor Yellow
-                Write-Host "Expected path: $pokeDataPath"
+                Write-Host "Checking PokeData repository at: $pokeDataPath" -ForegroundColor Yellow
                 
-                if (Test-Path $pokeDataPath) {
-                    Write-Host "SUCCESS: pokedata_app directory found!" -ForegroundColor Green
-                    Write-Host "Contents of pokedata_app:"
-                    Get-ChildItem $pokeDataPath -Force | Format-Table Name, Mode, Length, LastWriteTime
-                    
-                    # Check if this is a real git repository
-                    $gitPath = Join-Path $pokeDataPath ".git"
-                    if (Test-Path $gitPath) {
-                        Write-Host "✓ Real git repository detected" -ForegroundColor Green
-                        Set-Location $pokeDataPath
-                        Write-Host "Git remote origin:" -ForegroundColor Yellow
-                        git remote -v
-                        Write-Host "Latest commit:" -ForegroundColor Yellow
-                        git log --oneline -1
-                    } else {
-                        Write-Host "⚠ Mock structure detected (no .git directory)" -ForegroundColor Yellow
-                    }
-                } else {
-                    Write-Host "ERROR: pokedata_app directory not found!" -ForegroundColor Red
-                    Write-Host "Both service connection checkout and git clone fallback failed." -ForegroundColor Red
+                if (-not (Test-Path $pokeDataPath)) {
+                    Write-Host "ERROR: PokeData repository not found!" -ForegroundColor Red
+                    Write-Host "Service connection checkout failed." -ForegroundColor Red
                     exit 1
                 }
-                Write-Host ""
+                
+                Write-Host "✓ PokeData repository found" -ForegroundColor Green
                 
                 # Check for PokeDataFunc directory
                 $funcPath = Join-Path $pokeDataPath "PokeDataFunc"
-                Write-Host "=== Checking Function App Directory ===" -ForegroundColor Yellow
-                Write-Host "Expected path: $funcPath"
-                
-                if (Test-Path $funcPath) {
-                    Write-Host "SUCCESS: PokeDataFunc directory found!" -ForegroundColor Green
-                    Write-Host "Contents of PokeDataFunc:"
-                    Get-ChildItem $funcPath -Force | Format-Table Name, Mode, Length, LastWriteTime
-                    
-                    # Check for package.json and pnpm-lock.yaml
-                    $packageJson = Join-Path $funcPath "package.json"
-                    $pnpmLock = Join-Path $funcPath "pnpm-lock.yaml"
-                    
-                    if (Test-Path $packageJson) {
-                        Write-Host "✓ package.json found" -ForegroundColor Green
-                        Write-Host "Package.json contents:" -ForegroundColor Yellow
-                        Get-Content $packageJson | Select-Object -First 10
-                    } else {
-                        Write-Host "✗ package.json NOT found" -ForegroundColor Red
-                    }
-                    
-                    if (Test-Path $pnpmLock) {
-                        Write-Host "✓ pnpm-lock.yaml found" -ForegroundColor Green
-                    } else {
-                        Write-Host "✗ pnpm-lock.yaml NOT found" -ForegroundColor Red
-                    }
-                } else {
+                if (-not (Test-Path $funcPath)) {
                     Write-Host "ERROR: PokeDataFunc directory not found!" -ForegroundColor Red
-                    Write-Host "Repository structure is not as expected." -ForegroundColor Red
                     exit 1
                 }
                 
+                Write-Host "✓ PokeDataFunc directory found" -ForegroundColor Green
+                
+                # Verify required files
+                $packageJson = Join-Path $funcPath "package.json"
+                $pnpmLock = Join-Path $funcPath "pnpm-lock.yaml"
+                
+                if (-not (Test-Path $packageJson)) {
+                    Write-Host "ERROR: package.json not found!" -ForegroundColor Red
+                    exit 1
+                }
+                Write-Host "✓ package.json found" -ForegroundColor Green
+                
+                if (-not (Test-Path $pnpmLock)) {
+                    Write-Host "ERROR: pnpm-lock.yaml not found!" -ForegroundColor Red
+                    exit 1
+                }
+                Write-Host "✓ pnpm-lock.yaml found" -ForegroundColor Green
+                
                 Write-Host ""
-                Write-Host "=== VERIFICATION COMPLETE - PROCEEDING WITH BUILD ===" -ForegroundColor Green
+                Write-Host "=== REPOSITORY VERIFICATION SUCCESSFUL ===" -ForegroundColor Green
+                Write-Host "Ready to build real PokeData functions!" -ForegroundColor Green
           
           - task: NodeTool@0
             displayName: 'Use Node.js 18.x'
