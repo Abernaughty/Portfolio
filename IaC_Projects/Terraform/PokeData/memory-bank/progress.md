@@ -96,7 +96,7 @@
     - ✅ Added structured error messages with troubleshooting guidance
     - ✅ Committed and pushed enhanced pipeline (commit 6602cf4)
 
-### September 16, 2025 - Session 8 (Current)
+### September 16, 2025 - Session 8
 12. **Multi-Repository Checkout Path Parameter Fix**
     - ✅ Identified root cause: Custom `path: 'pokedata_app'` parameter causing silent checkout failures
     - ✅ Confirmed repository access working (manual git clone successful with 3,784 objects)
@@ -107,6 +107,16 @@
     - ✅ Committed and pushed fix (commit 9464d67) - simplified configuration
     - ✅ **PIPELINE DEPLOYMENT SUCCESSFUL** - All stages completed successfully
     - ❌ **NEW ISSUE**: Functions not visible in Azure portal despite successful deployment
+
+### September 16, 2025 - Session 9 (Current)
+13. **Node.js Runtime Modernization**
+    - ✅ Updated Node.js version from 18 (EOS) to 22 throughout codebase
+    - ✅ **Function App Module**: Updated both Windows and Linux runtime stacks to `node_version = "~22"`
+    - ✅ **Removed .NET References**: Cleaned up all .NET framework references to prevent confusion
+    - ✅ **Simplified Configuration**: Removed complex `runtime_stack` variable, hardcoded Node.js 22
+    - ✅ **Legacy File Update**: Fixed `pokedata-func.tf` from .NET 8.0 to Node.js 22
+    - ✅ **Validation Successful**: Terraform configuration validates correctly with new runtime
+    - ✅ **Files Updated**: `modules/function-app/main.tf`, `modules/function-app/variables.tf`, `pokedata-func.tf`
 
 ## Current Status 🔄
 

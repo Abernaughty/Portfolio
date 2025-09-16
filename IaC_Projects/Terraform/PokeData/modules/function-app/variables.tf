@@ -59,21 +59,6 @@ variable "os_type" {
   }
 }
 
-variable "runtime_stack" {
-  description = "The runtime stack for the Function App"
-  type = object({
-    dotnet_version              = optional(string)
-    java_version                = optional(string)
-    node_version                = optional(string)
-    python_version              = optional(string)
-    powershell_core_version     = optional(string)
-    use_custom_runtime          = optional(bool, false)
-    use_dotnet_isolated_runtime = optional(bool, false)
-  })
-  default = {
-    dotnet_version = "v8.0"
-  }
-}
 
 variable "service_plan_id" {
   description = "The ID of the App Service Plan. If not provided, a consumption plan will be created"

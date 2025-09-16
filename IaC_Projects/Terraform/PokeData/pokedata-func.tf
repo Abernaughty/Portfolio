@@ -73,12 +73,7 @@ resource "azurerm_windows_function_app" "res-0" {
     websockets_enabled                     = false
     worker_count                           = 1
     application_stack {
-      dotnet_version              = "v8.0"
-      java_version                = ""
-      node_version                = ""
-      powershell_core_version     = ""
-      use_custom_runtime          = false
-      use_dotnet_isolated_runtime = false
+      node_version = "~22"
     }
     cors {
       allowed_origins     = ["http://localhost:3000", "https://calm-mud-07a7f7a10.6.azurestaticapps.net", "https://maber-apim-test.azure-api.net", "https://pokedata.maber.io", "https://portal.azure.com"]
