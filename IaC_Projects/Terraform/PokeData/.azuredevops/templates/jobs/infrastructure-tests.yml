@@ -53,14 +53,14 @@ steps:
         }
 
   - task: AzureCLI@2
-    displayName: 'Test Function App'
+    displayName: 'Test Function App Infrastructure'
     inputs:
       azureSubscription: '$(azureServiceConnection)'
       scriptType: pscore
       scriptLocation: inlineScript
       inlineScript: |
         $ErrorActionPreference = 'Stop'
-        Write-Host "## Testing Function App"
+        Write-Host "## Testing Function App Infrastructure"
 
         $RG_NAME  = "pokedata-${{ parameters.environment }}-rg"
         $FUNC_NAME = "pokedata-func-${{ parameters.environment }}"
@@ -75,13 +75,143 @@ steps:
         $state = (az functionapp show --name $FUNC_NAME --resource-group $RG_NAME --query state -o tsv).Trim()
         if ($state -eq 'Running') { Write-Host "✅ Function App is running" } else { Write-Host "⚠️ Function App state: $state" }
 
-        Write-Host "Testing HTTP endpoint..."
-        try {
-          $resp = Invoke-WebRequest -Uri ("https://$funcHost") -Method Head -MaximumRedirection 5 -TimeoutSec 15
-          Write-Host ("HTTP Status: " + [int]$resp.StatusCode)
-        } catch {
-          Write-Host ("HTTP request failed: " + $_.Exception.Message)
+        # Check critical app settings
+        Write-Host ""
+        Write-Host "### Verifying Critical App Settings"
+        $appSettings = az functionapp config appsettings list --name $FUNC_NAME --resource-group $RG_NAME | ConvertFrom-Json
+        
+        $requiredSettings = @(
+          'AzureWebJobsFeatureFlags',
+          'FUNCTIONS_WORKER_RUNTIME',
+          'WEBSITE_RUN_FROM_PACKAGE',
+          'WEBSITE_NODE_DEFAULT_VERSION'
+        )
+        
+        foreach ($setting in $requiredSettings) {
+          $found = $appSettings | Where-Object { $_.name -eq $setting }
+          if ($found) {
+            Write-Host "✅ $setting = $($found.value)"
+          } else {
+            Write-Host "❌ Missing required setting: $setting"
+          }
         }
+
+        # Check function list
+        Write-Host ""
+        Write-Host "### Checking Deployed Functions"
+        try {
+          $functions = az functionapp function list --name $FUNC_NAME --resource-group $RG_NAME | ConvertFrom-Json
+          if ($functions.Count -gt 0) {
+            Write-Host "✅ Found $($functions.Count) deployed functions:"
+            foreach ($func in $functions) {
+              Write-Host "  - $($func.name) ($($func.config.bindings[0].type))"
+            }
+          } else {
+            Write-Host "⚠️ No functions found - this may indicate deployment issues"
+          }
+        } catch {
+          Write-Host "⚠️ Could not retrieve function list: $($_.Exception.Message)"
+        }
+
+  - task: PowerShell@2
+    displayName: 'Test Function API Endpoints'
+    inputs:
+      targetType: inline
+      script: |
+        $ErrorActionPreference = 'Continue'  # Continue on errors to test all endpoints
+        Write-Host "## Testing Function API Endpoints"
+        
+        $RG_NAME = "pokedata-${{ parameters.environment }}-rg"
+        $FUNC_NAME = "pokedata-func-${{ parameters.environment }}"
+        
+        # Get function app hostname
+        $funcHost = (az functionapp show --name $FUNC_NAME --resource-group $RG_NAME --query defaultHostName -o tsv).Trim()
+        $baseUrl = "https://$funcHost"
+        
+        Write-Host "Base URL: $baseUrl"
+        Write-Host ""
+        
+        # Test endpoints with retry logic
+        function Test-Endpoint {
+          param(
+            [string]$Url,
+            [string]$Description,
+            [int]$ExpectedStatus = 200,
+            [int]$MaxRetries = 3,
+            [int]$RetryDelay = 5
+          )
+          
+          Write-Host "### Testing: $Description"
+          Write-Host "URL: $Url"
+          
+          for ($i = 1; $i -le $MaxRetries; $i++) {
+            try {
+              $response = Invoke-WebRequest -Uri $Url -Method GET -TimeoutSec 30 -UseBasicParsing
+              $statusCode = [int]$response.StatusCode
+              
+              if ($statusCode -eq $ExpectedStatus) {
+                Write-Host "✅ SUCCESS: HTTP $statusCode"
+                if ($response.Content.Length -gt 0) {
+                  $contentPreview = $response.Content.Substring(0, [Math]::Min(200, $response.Content.Length))
+                  Write-Host "Response preview: $contentPreview..."
+                }
+                return $true
+              } else {
+                Write-Host "⚠️ Unexpected status: HTTP $statusCode (expected $ExpectedStatus)"
+                return $false
+              }
+            } catch {
+              Write-Host "❌ Attempt $i failed: $($_.Exception.Message)"
+              if ($i -lt $MaxRetries) {
+                Write-Host "Retrying in $RetryDelay seconds..."
+                Start-Sleep -Seconds $RetryDelay
+              }
+            }
+          }
+          
+          Write-Host "❌ FAILED after $MaxRetries attempts"
+          return $false
+        }
+        
+        # Test suite
+        $testResults = @()
+        
+        # 1. Test root endpoint (should return function app info or 404)
+        $testResults += Test-Endpoint -Url "$baseUrl/" -Description "Root endpoint" -ExpectedStatus 404
+        
+        # 2. Test health/status endpoint (if exists)
+        $testResults += Test-Endpoint -Url "$baseUrl/api/health" -Description "Health check endpoint" -ExpectedStatus 200
+        
+        # 3. Test Pokemon card sets endpoint
+        $testResults += Test-Endpoint -Url "$baseUrl/api/sets" -Description "Get Pokemon card sets" -ExpectedStatus 200
+        
+        # 4. Test specific set endpoint (using common set ID)
+        $testResults += Test-Endpoint -Url "$baseUrl/api/sets/base1" -Description "Get specific set (base1)" -ExpectedStatus 200
+        
+        # 5. Test cards in set endpoint
+        $testResults += Test-Endpoint -Url "$baseUrl/api/sets/base1/cards" -Description "Get cards in set (base1)" -ExpectedStatus 200
+        
+        # 6. Test specific card endpoint
+        $testResults += Test-Endpoint -Url "$baseUrl/api/sets/base1/cards/base1-1" -Description "Get specific card (Alakazam)" -ExpectedStatus 200
+        
+        # Summary
+        Write-Host ""
+        Write-Host "## API Endpoint Test Summary"
+        $successCount = ($testResults | Where-Object { $_ -eq $true }).Count
+        $totalCount = $testResults.Count
+        
+        Write-Host "Successful tests: $successCount/$totalCount"
+        
+        if ($successCount -eq $totalCount) {
+          Write-Host "✅ All API endpoints are responding correctly"
+        } elseif ($successCount -gt 0) {
+          Write-Host "⚠️ Some API endpoints are working, but issues detected"
+        } else {
+          Write-Host "❌ No API endpoints are responding - deployment may have failed"
+        }
+        
+        # Set pipeline variable for downstream tasks
+        Write-Host "##vso[task.setvariable variable=ApiTestsPassed]$($successCount -gt 0)"
 
   - task: AzureCLI@2
     displayName: 'Test Static Web App'
