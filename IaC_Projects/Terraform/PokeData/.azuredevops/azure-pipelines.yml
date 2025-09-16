@@ -45,6 +45,7 @@ resources:
       type: github
       name: Abernaughty/PokeData
       endpoint: "PokeData Repo Service Connection"
+      ref: refs/heads/main
 
 pool:
   name: Default
@@ -100,13 +101,39 @@ stages:
                 Write-Host "=== REPOSITORY STRUCTURE VERIFICATION ===" -ForegroundColor Cyan
                 Write-Host ""
                 
+                # Debug: Show environment variables and paths
+                Write-Host "=== DEBUG INFORMATION ===" -ForegroundColor Yellow
+                Write-Host "BUILD_SOURCESDIRECTORY: $env:BUILD_SOURCESDIRECTORY"
+                Write-Host "Available directories in sources:"
+                if (Test-Path $env:BUILD_SOURCESDIRECTORY) {
+                    Get-ChildItem $env:BUILD_SOURCESDIRECTORY -Directory | ForEach-Object {
+                        Write-Host "  - $($_.Name)" -ForegroundColor Gray
+                    }
+                } else {
+                    Write-Host "  BUILD_SOURCESDIRECTORY does not exist!" -ForegroundColor Red
+                }
+                Write-Host ""
+                
                 # Check for pokedata_app directory
                 $pokeDataPath = Join-Path $env:BUILD_SOURCESDIRECTORY "pokedata_app"
                 Write-Host "Checking PokeData repository at: $pokeDataPath" -ForegroundColor Yellow
                 
                 if (-not (Test-Path $pokeDataPath)) {
                     Write-Host "ERROR: PokeData repository not found!" -ForegroundColor Red
-                    Write-Host "Service connection checkout failed." -ForegroundColor Red
+                    Write-Host "Expected path: $pokeDataPath" -ForegroundColor Red
+                    
+                    # Additional debugging - look for any directory that might contain PokeData
+                    Write-Host "Searching for PokeData content in other directories..." -ForegroundColor Yellow
+                    Get-ChildItem $env:BUILD_SOURCESDIRECTORY -Directory | ForEach-Object {
+                        $dirPath = $_.FullName
+                        Write-Host "Checking directory: $($_.Name)" -ForegroundColor Gray
+                        if (Test-Path (Join-Path $dirPath "PokeDataFunc")) {
+                            Write-Host "  ✓ Found PokeDataFunc in: $($_.Name)" -ForegroundColor Green
+                        }
+                        if (Test-Path (Join-Path $dirPath "package.json")) {
+                            Write-Host "  ✓ Found package.json in: $($_.Name)" -ForegroundColor Green
+                        }
+                    }
                     exit 1
                 }
                 
