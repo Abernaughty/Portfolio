@@ -89,7 +89,6 @@ stages:
             displayName: 'Checkout PokeData repository'
             clean: true
             fetchDepth: 1
-            path: 'pokedata_app'
           
           # Verify repository structure
           - task: PowerShell@2
@@ -114,8 +113,8 @@ stages:
                 }
                 Write-Host ""
                 
-                # Check for pokedata_app directory
-                $pokeDataPath = Join-Path $env:BUILD_SOURCESDIRECTORY "pokedata_app"
+                # Check for PokeData directory (default Azure DevOps behavior)
+                $pokeDataPath = Join-Path $env:BUILD_SOURCESDIRECTORY "PokeData"
                 Write-Host "Checking PokeData repository at: $pokeDataPath" -ForegroundColor Yellow
                 
                 if (-not (Test-Path $pokeDataPath)) {
@@ -188,7 +187,7 @@ stages:
             inputs:
               targetType: 'inline'
               pwsh: true
-              workingDirectory: '$(Build.SourcesDirectory)/pokedata_app/PokeDataFunc'
+              workingDirectory: '$(Build.SourcesDirectory)/PokeData/PokeDataFunc'
               script: |
                 Write-Host "=== Installing dependencies with pnpm ===" -ForegroundColor Yellow
                 pnpm install
@@ -201,7 +200,7 @@ stages:
           - task: ArchiveFiles@2
             displayName: 'Archive function app files'
             inputs:
-              rootFolderOrFile: '$(Build.SourcesDirectory)/pokedata_app/PokeDataFunc'
+              rootFolderOrFile: '$(Build.SourcesDirectory)/PokeData/PokeDataFunc'
               includeRootFolder: false
               archiveType: 'zip'
               archiveFile: '$(Build.ArtifactStagingDirectory)/PokeDataFunc.zip'
