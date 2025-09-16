@@ -165,7 +165,7 @@ resource "azurerm_windows_function_app" "this" {
     cors {
       allowed_origins     = local.merged_cors_origins
       support_credentials = var.cors_support_credentials
-      }
+    }
 
     # Scaling
     app_scale_limit           = var.app_scale_limit

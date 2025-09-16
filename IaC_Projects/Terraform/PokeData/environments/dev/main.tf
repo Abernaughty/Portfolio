@@ -117,7 +117,7 @@ module "static_web_app" {
 
   # GitHub configuration
   repository_url    = var.github_repository_url
-  repository_branch = var.github_branch    # Fixed: use repository_branch instead of branch
+  repository_branch = var.github_branch # Fixed: use repository_branch instead of branch
   # repository_token  = var.repository_token # Token stored in terraform-dev pipeline variable group
 
   # Build configuration
