@@ -147,6 +147,31 @@
     - ✅ **Comprehensive Documentation**: Created `azure-function-deployment-troubleshooting.md`
     - ⏳ **Next Session**: Apply Terraform fixes and redeploy via Azure DevOps pipeline
 
+### September 16, 2025 - Session 14
+16. **Pipeline App Settings Fix + Post-Deployment Tests**
+    - ✅ **Critical Pipeline Fix**: Fixed malformed app settings in Azure DevOps pipeline causing "Parameter name cannot be empty" error
+    - ✅ **App Settings Format**: Properly quoted all app setting values in pipeline YAML
+    - ✅ **Comprehensive Post-Deployment Tests**: Enhanced infrastructure-tests.yml with:
+      - App settings validation for Azure Functions v4 requirements
+      - Function deployment verification with retry logic
+      - API endpoint testing for Pokemon card API endpoints (`/api/health`, `/api/sets`, etc.)
+      - 3-attempt retry mechanism with 5-second delays
+    - ✅ **Testing Documentation**: Created `post-deployment-testing.md` with complete testing strategy
+    - ✅ **Memory Bank Updates**: Updated activeContext.md with latest changes
+    - ✅ **Deployment Ready**: All changes committed and pushed (commit 66339e3)
+    - ⏳ **Next**: Monitor pipeline execution to validate fixes work correctly
+
+### September 16, 2025 - Session 15
+17. **CRITICAL YAML Format Fix Applied**
+    - ✅ **Root Cause Confirmed**: YAML multiline string (`|`) was including newline characters in JSON
+    - ✅ **Malformed JSON Analysis**: Error created key-value pairs like `"AzureWebJobsFeatureFlags":"\"EnableWorkerIndexing\"\n-WEBSITE_NODE_DEFAULT_VERSION"`
+    - ✅ **Solution Implemented**: Changed from multiline to single-line format:
+      - **Before**: `appSettings: |` with multiple lines and quotes
+      - **After**: `appSettings: '-COSMOS_DB_CONNECTION_STRING $(COSMOS_DB_CONNECTION_STRING) -AzureWebJobsFeatureFlags EnableWorkerIndexing -WEBSITE_NODE_DEFAULT_VERSION ~22'`
+    - ✅ **Fix Committed**: Pushed fix to repository (commit ece54a5)
+    - ✅ **Pipeline Ready**: Azure DevOps pipeline should now deploy successfully without "Parameter name cannot be empty" error
+    - ⏳ **Next**: Monitor pipeline execution to confirm successful deployment
+
 ## Current Status 🔄
 
 ### Infrastructure Status

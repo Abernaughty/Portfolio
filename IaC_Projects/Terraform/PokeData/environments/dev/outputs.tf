@@ -28,6 +28,33 @@ output "cosmos_db_connection_string" {
   sensitive   = true
 }
 
+# Storage Account Outputs
+output "storage_account_name" {
+  description = "Name of the Storage Account"
+  value       = module.storage_account.storage_account_name
+}
+
+output "storage_account_id" {
+  description = "ID of the Storage Account"
+  value       = module.storage_account.storage_account_id
+}
+
+output "blob_storage_connection_string" {
+  description = "Primary connection string for blob storage"
+  value       = module.storage_account.primary_connection_string
+  sensitive   = true
+}
+
+output "primary_blob_endpoint" {
+  description = "Primary blob endpoint URL"
+  value       = module.storage_account.primary_blob_endpoint
+}
+
+output "storage_containers" {
+  description = "Created storage containers"
+  value       = module.storage_account.containers
+}
+
 # Function App Outputs
 output "function_app_name" {
   description = "Name of the Function App"

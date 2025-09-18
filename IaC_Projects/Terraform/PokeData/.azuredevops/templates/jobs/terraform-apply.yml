@@ -73,6 +73,66 @@ steps:
     env:
       TF_VAR_repository_token: $(github_token)
 
+  # Extract Terraform Outputs as Pipeline Variables
+  - task: PowerShell@2
+    displayName: 'Extract Terraform Outputs for Pipeline Variables'
+    name: setOutputs
+    env:
+      TF_VAR_repository_token: $(github_token)
+    inputs:
+      targetType: inline
+      workingDirectory: '${{ parameters.workingDirectory }}'
+      script: |
+        $ErrorActionPreference = 'Stop'
+        $env:TF_IN_AUTOMATION = "true"
+        
+        Write-Host "=== EXTRACTING TERRAFORM OUTPUTS FOR PIPELINE VARIABLES ===" -ForegroundColor Cyan
+        Write-Host ""
+        
+        # Extract connection strings for Function App deployment
+        try {
+          Write-Host "Extracting Cosmos DB connection string..." -ForegroundColor Yellow
+          $cosmosConnection = terraform output -raw cosmos_db_connection_string
+          if ([string]::IsNullOrWhiteSpace($cosmosConnection)) {
+            throw "Cosmos DB connection string is empty"
+          }
+          Write-Host "✓ Cosmos DB connection string extracted" -ForegroundColor Green
+          Write-Host "##vso[task.setvariable variable=COSMOS_CONNECTION;isOutput=true;isSecret=true]$cosmosConnection"
+          
+          Write-Host "Extracting Storage Account connection string..." -ForegroundColor Yellow
+          $blobConnection = terraform output -raw blob_storage_connection_string
+          if ([string]::IsNullOrWhiteSpace($blobConnection)) {
+            throw "Storage Account connection string is empty"
+          }
+          Write-Host "✓ Storage Account connection string extracted" -ForegroundColor Green
+          Write-Host "##vso[task.setvariable variable=BLOB_CONNECTION;isOutput=true;isSecret=true]$blobConnection"
+          
+          # Extract other useful outputs for reference
+          Write-Host "Extracting additional outputs..." -ForegroundColor Yellow
+          $functionAppName = terraform output -raw function_app_name
+          $storageAccountName = terraform output -raw storage_account_name
+          
+          Write-Host "##vso[task.setvariable variable=FUNCTION_APP_NAME;isOutput=true]$functionAppName"
+          Write-Host "##vso[task.setvariable variable=STORAGE_ACCOUNT_NAME;isOutput=true]$storageAccountName"
+          
+          Write-Host ""
+          Write-Host "=== PIPELINE VARIABLES SET SUCCESSFULLY ===" -ForegroundColor Green
+          Write-Host "✓ COSMOS_CONNECTION (sensitive)" -ForegroundColor Green
+          Write-Host "✓ BLOB_CONNECTION (sensitive)" -ForegroundColor Green
+          Write-Host "✓ FUNCTION_APP_NAME: $functionAppName" -ForegroundColor Green
+          Write-Host "✓ STORAGE_ACCOUNT_NAME: $storageAccountName" -ForegroundColor Green
+          Write-Host ""
+          Write-Host "These variables are now available for the Function App deployment stage." -ForegroundColor Cyan
+          
+        } catch {
+          Write-Host "❌ ERROR: Failed to extract Terraform outputs" -ForegroundColor Red
+          Write-Host "Error details: $($_.Exception.Message)" -ForegroundColor Red
+          Write-Host ""
+          Write-Host "Available Terraform outputs:" -ForegroundColor Yellow
+          terraform output
+          throw "Pipeline variable extraction failed"
+        }
+
   # Generate Deployment Summary  
   - task: PowerShell@2
     displayName: 'Generate Deployment Summary'

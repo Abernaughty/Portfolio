@@ -61,6 +61,49 @@ module "cosmos_db" {
   tags = local.common_tags
 }
 
+# Storage Account Module
+module "storage_account" {
+  source = "../../modules/storage-account"
+
+  storage_account_name = "${var.project}st${var.environment}${random_string.storage_suffix.result}"
+  resource_group_name  = azurerm_resource_group.main.name
+  location             = azurerm_resource_group.main.location
+
+  # Dev configuration - cost optimized
+  account_tier     = "Standard"
+  replication_type = "LRS"
+  account_kind     = "StorageV2"
+
+  # Security settings for dev
+  allow_public_access           = false
+  public_network_access_enabled = true
+
+  # Data protection settings
+  enable_versioning                = true
+  enable_change_feed              = false
+  soft_delete_retention_days      = 7
+  container_delete_retention_days = 7
+
+  # Create containers for the application
+  containers = {
+    "pokemon-images" = {
+      access_type = "private"
+    }
+    "card-data" = {
+      access_type = "private"
+    }
+  }
+
+  tags = local.common_tags
+}
+
+# Random string for storage account name uniqueness
+resource "random_string" "storage_suffix" {
+  length  = 6
+  special = false
+  upper   = false
+}
+
 # Function App Module
 module "function_app" {
   source = "../../modules/function-app"

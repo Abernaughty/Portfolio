@@ -2,9 +2,86 @@
 
 ## Current Status
 - **Date**: September 16, 2025
-- **Phase**: AUTHENTICATION FIX DEPLOYED → POST-DEPLOYMENT TESTING OPERATIONAL
-- **Mode**: Azure DevOps pipeline authentication issues resolved, API endpoint testing now functional
-- **Goal**: Build impressive DevOps portfolio with modern CI/CD stack
+- **Phase**: PIPELINE VARIABLE CONFIGURATION → STORAGE ACCOUNT INTEGRATION PLANNING
+- **Mode**: Comprehensive variable management strategy designed, ready to implement Storage Account module
+- **Goal**: Build impressive DevOps portfolio with modern CI/CD stack and complete application functionality
+
+## Latest Achievement: Pipeline Variable Configuration Strategy (Session 18 - September 16, 2025)
+
+### Problem Analyzed and Solved
+**Application Environment Variable Management** - Successfully analyzed PokeData application requirements and designed comprehensive pipeline variable strategy
+
+### Root Cause Analysis & Solution Design
+1. ✅ **Application Requirements Analysis**: Examined PokeData .env file to identify all required environment variables
+2. ✅ **Infrastructure Gap Identification**: Discovered missing Storage Account and Redis Cache infrastructure
+3. ✅ **Variable Strategy Design**: Chose Solution 3 (Pipeline Variables) for dynamic Terraform output integration
+4. ✅ **Implementation Plan Created**: Comprehensive step-by-step plan for Storage Account integration
+
+### Key Variables Identified
+**✅ Already Available (from existing Terraform):**
+- `COSMOS_DB_CONNECTION_STRING` - From Cosmos DB module output
+
+**❌ Missing Infrastructure (need to add):**
+- `BLOB_STORAGE_CONNECTION_STRING` - Requires new Storage Account module
+- `REDIS_CONNECTION_STRING` - Requires new Redis Cache module (optional)
+
+**✅ External API Keys (static configuration):**
+- `POKEMON_TCG_API_KEY` - External API key
+- `POKEMON_TCG_API_BASE_URL` - Static: "https://api.pokemontcg.io/v2"
+- `POKEDATA_API_KEY` - External API key
+- `POKEDATA_API_BASE_URL` - Static: "https://www.pokedata.io/v0"
+
+### Solution 3: Pipeline Variables Strategy
+**Chosen Approach**: Dynamic variable extraction from Terraform outputs within pipeline stages
+
+**Pipeline Structure**:
+```yaml
+- stage: TerraformApply
+  jobs:
+  - job: Infrastructure
+    steps:
+    - # Terraform deployment
+    - task: PowerShell@2
+      name: setOutputs
+      inputs:
+        script: |
+          $cosmosConnection = terraform output -raw cosmos_connection_string
+          $blobConnection = terraform output -raw blob_storage_connection_string
+          Write-Host "##vso[task.setvariable variable=COSMOS_CONNECTION;isOutput=true;isSecret=true]$cosmosConnection"
+          Write-Host "##vso[task.setvariable variable=BLOB_CONNECTION;isOutput=true;isSecret=true]$blobConnection"
+
+- stage: DeployFunction
+  dependsOn: TerraformApply
+  variables:
+    COSMOS_DB_CONNECTION_STRING: $[stageDependencies.TerraformApply.Infrastructure.outputs['setOutputs.COSMOS_CONNECTION']]
+    BLOB_STORAGE_CONNECTION_STRING: $[stageDependencies.TerraformApply.Infrastructure.outputs['setOutputs.BLOB_CONNECTION']]
+```
+
+### Implementation Plan Created
+**Phase 1: Storage Account Infrastructure**
+1. Create `modules/storage-account/` Terraform module
+2. Add Storage Account to `environments/dev/main.tf`
+3. Export connection string in `environments/dev/outputs.tf`
+
+**Phase 2: Pipeline Integration**
+1. Modify Terraform Apply stage to extract outputs
+2. Update Function Deployment stage with variable dependencies
+3. Configure all application environment variables
+
+**Phase 3: Testing & Validation**
+1. Deploy infrastructure and verify Storage Account creation
+2. Test Function deployment with all environment variables
+3. Validate blob storage connectivity from Function App
+
+### Benefits of Solution 3
+✅ **Fully Automated** - No manual Variable Group updates needed
+✅ **Secure** - Connection strings marked as secret in pipeline
+✅ **Dynamic** - Always uses latest Terraform outputs
+✅ **Scalable** - Easy to add more infrastructure outputs
+
+## Next Immediate Priority: Storage Account Module Creation
+**Ready to implement**: Comprehensive plan established, moving to execution phase
+**Focus**: Create Storage Account Terraform module and integrate with pipeline variable extraction
 
 ## Current Infrastructure State
 ```
@@ -154,6 +231,7 @@ appSettings: '-COSMOS_DB_CONNECTION_STRING $(COSMOS_DB_CONNECTION_STRING) -Azure
 2. ✅ **Dev Environment Issue**: Dev environment still shows no functions due to PNPM deployment
 3. ✅ **Package Manager Incompatibility**: PNPM builds create deployment artifacts incompatible with Azure Functions runtime
 4. ✅ **GitHub Workflow Reverted**: PokeData repository already reverted to NPM (commits 8f6b63d, 2f56319)
+5. ✅ **Azure DevOps Pipeline Migration**: Successfully migrated Azure DevOps pipeline from PNPM to NPM (commit 521c435)
 
 ### Technical Reversion Applied
 **GitHub Workflow Corrected Back to NPM**:
@@ -164,6 +242,21 @@ appSettings: '-COSMOS_DB_CONNECTION_STRING $(COSMOS_DB_CONNECTION_STRING) -Azure
   - `pnpm run build` → `npm run build`
   - `pnpm test` → `npm test`
 - ✅ **Package Lock**: Added `package-lock.json` for proper npm caching
+
+**Azure DevOps Pipeline Corrected Back to NPM**:
+- ✅ **File Validation**: Updated from `pnpm-lock.yaml` to `package-lock.json` checks
+- ✅ **PNPM Installation Removed**: Eliminated PNPM setup task entirely
+- ✅ **Build Commands Updated**: 
+  - `pnpm install` → `npm ci`
+  - `pnpm run build` → `npm run build`
+- ✅ **Display Messages**: Updated to reflect NPM usage
+- ✅ **Pipeline Triggered**: Changes committed and pushed (commit 521c435)
+
+### Current Status
+- ✅ **Production Environment**: Working with NPM (GitHub Actions)
+- ✅ **Dev Environment Pipeline**: Migrated to NPM (Azure DevOps)
+- ⏳ **Dev Environment Testing**: Pipeline deployment in progress
+- ⏳ **Function Visibility**: Awaiting NPM deployment completion to test endpoints
 
 ### Previous Achievement: PNPM Migration Attempt (Session 12 - September 16, 2025)
 
