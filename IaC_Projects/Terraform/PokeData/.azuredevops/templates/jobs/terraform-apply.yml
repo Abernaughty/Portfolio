@@ -85,49 +85,126 @@ steps:
       targetType: inline
       workingDirectory: ${{ parameters.workingDirectory }}
       script: |
-        # SMOKE: prove this step can emit pipeline output variables
-        Write-Host "##vso[task.setvariable variable=SMOKE;isOutput=true]ok"
-        
-        $ErrorActionPreference = 'Stop'
+        # Use Continue instead of Stop to handle missing outputs gracefully
+        $ErrorActionPreference = 'Continue'
         $env:TF_IN_AUTOMATION = 'true'
 
         Write-Host "=== EXTRACTING TERRAFORM OUTPUTS ==="
-        $json = terraform output -json
-        $outs = $json | ConvertFrom-Json
+        
+        # Get terraform outputs with error handling
+        try {
+          $json = terraform output -json
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "##vso[task.logissue type=warning]Terraform output command failed with exit code $LASTEXITCODE"
+            $json = "{}"
+          }
+        } catch {
+          Write-Host "##vso[task.logissue type=warning]Failed to get terraform outputs: $($_.Exception.Message)"
+          $json = "{}"
+        }
+
+        try {
+          $outs = $json | ConvertFrom-Json
+        } catch {
+          Write-Host "##vso[task.logissue type=error]Failed to parse terraform outputs JSON: $($_.Exception.Message)"
+          exit 1
+        }
+
+        # Show available outputs for debugging
+        Write-Host "Available Terraform outputs:"
+        if ($outs.PSObject.Properties.Count -gt 0) {
+          $outs.PSObject.Properties | ForEach-Object { 
+            Write-Host "  - $($_.Name)" 
+          }
+        } else {
+          Write-Host "  (no outputs found)"
+        }
 
         function Get-OutVal {
           param([object]$Obj,[string]$Name)
-          if ($Obj.PSObject.Properties.Name -contains $Name) {
-            $v = $Obj.$Name.value
-            if ($null -ne $v) { return [string]$v }
+          try {
+            if ($Obj.PSObject.Properties.Name -contains $Name) {
+              $v = $Obj.$Name.value
+              if ($null -ne $v) { return [string]$v }
+            }
+          } catch {
+            Write-Host "##vso[task.logissue type=warning]Error accessing output '$Name': $($_.Exception.Message)"
           }
           return $null
         }
 
-        $cosmos   = Get-OutVal $outs 'cosmos_db_connection_string'
-        $funcApp  = Get-OutVal $outs 'function_app_name'
-        $blob     = Get-OutVal $outs 'blob_storage_connection_string'
-        $redis    = Get-OutVal $outs 'redis_connection_string'
+        # Extract outputs with individual error handling
+        $cosmos = $null
+        $funcApp = $null
+        $blob = $null
+        $redis = $null
 
+        try {
+          $cosmos = Get-OutVal $outs 'cosmos_db_connection_string'
+          if ($cosmos) { Write-Host "✅ Found cosmos_db_connection_string" }
+        } catch {
+          Write-Host "##vso[task.logissue type=warning]Error extracting cosmos_db_connection_string: $($_.Exception.Message)"
+        }
+
+        try {
+          $funcApp = Get-OutVal $outs 'function_app_name'
+          if ($funcApp) { Write-Host "✅ Found function_app_name: $funcApp" }
+        } catch {
+          Write-Host "##vso[task.logissue type=warning]Error extracting function_app_name: $($_.Exception.Message)"
+        }
+
+        try {
+          $blob = Get-OutVal $outs 'blob_storage_connection_string'
+          if ($blob) { Write-Host "✅ Found blob_storage_connection_string" } else { Write-Host "ℹ️ blob_storage_connection_string not available (optional)" }
+        } catch {
+          Write-Host "##vso[task.logissue type=warning]Error extracting blob_storage_connection_string: $($_.Exception.Message)"
+        }
+
+        try {
+          $redis = Get-OutVal $outs 'redis_connection_string'
+          if ($redis) { Write-Host "✅ Found redis_connection_string" } else { Write-Host "ℹ️ redis_connection_string not available (optional)" }
+        } catch {
+          Write-Host "##vso[task.logissue type=warning]Error extracting redis_connection_string: $($_.Exception.Message)"
+        }
+
+        # Check for required outputs
         $missing = @()
         if ([string]::IsNullOrWhiteSpace($cosmos))  { $missing += 'cosmos_db_connection_string' }
         if ([string]::IsNullOrWhiteSpace($funcApp)) { $missing += 'function_app_name' }
 
-        if ($cosmos)  { Write-Host "##vso[task.setvariable variable=COSMOS_CONNECTION;isOutput=true;isSecret=true]$cosmos" }
-        if ($funcApp) { Write-Host "##vso[task.setvariable variable=FUNCTION_APP_NAME;isOutput=true]$funcApp" }
-        if ($blob)    { Write-Host "##vso[task.setvariable variable=BLOB_CONNECTION;isOutput=true;isSecret=true]$blob" }
-        if ($redis)   { Write-Host "##vso[task.setvariable variable=REDIS_CONNECTION;isOutput=true;isSecret=true]$redis" }
+        # Set pipeline variables (only if values exist)
+        if ($cosmos)  { 
+          Write-Host "##vso[task.setvariable variable=COSMOS_CONNECTION;isOutput=true;isSecret=true]$cosmos"
+          Write-Host "✅ Set COSMOS_CONNECTION pipeline variable"
+        }
+        if ($funcApp) { 
+          Write-Host "##vso[task.setvariable variable=FUNCTION_APP_NAME;isOutput=true]$funcApp"
+          Write-Host "✅ Set FUNCTION_APP_NAME pipeline variable"
+        }
+        if ($blob)    { 
+          Write-Host "##vso[task.setvariable variable=BLOB_CONNECTION;isOutput=true;isSecret=true]$blob"
+          Write-Host "✅ Set BLOB_CONNECTION pipeline variable"
+        }
+        if ($redis)   { 
+          Write-Host "##vso[task.setvariable variable=REDIS_CONNECTION;isOutput=true;isSecret=true]$redis"
+          Write-Host "✅ Set REDIS_CONNECTION pipeline variable"
+        }
 
+        # Set availability flags
         Write-Host "##vso[task.setvariable variable=HAS_BLOB_STORAGE;isOutput=true]$(([bool]$blob).ToString().ToLower())"
         Write-Host "##vso[task.setvariable variable=HAS_REDIS_CACHE;isOutput=true]$(([bool]$redis).ToString().ToLower())"
+        Write-Host "✅ Set availability flags: HAS_BLOB_STORAGE=$([bool]$blob), HAS_REDIS_CACHE=$([bool]$redis)"
 
+        # Fail only if required outputs are missing
         if ($missing.Count -gt 0) {
           Write-Host "##vso[task.logissue type=error]Missing required outputs: $($missing -join ', ')"
-          Write-Host "##vso[task.complete result=Failed;]"
+          Write-Host "##vso[task.logissue type=error]Required outputs must be defined in environments/dev/outputs.tf"
           exit 1
         }
 
         Write-Host "=== PIPELINE VARIABLES SET SUCCESSFULLY ==="
+        Write-Host "Required variables: COSMOS_CONNECTION, FUNCTION_APP_NAME"
+        Write-Host "Optional variables: BLOB_CONNECTION (available: $([bool]$blob)), REDIS_CONNECTION (available: $([bool]$redis))"
         exit 0
 
   # Generate Deployment Summary  
