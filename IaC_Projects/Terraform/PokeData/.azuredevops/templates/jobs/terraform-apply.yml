@@ -83,36 +83,44 @@ steps:
       targetType: inline
       workingDirectory: '${{ parameters.workingDirectory }}'
       script: |
-        $ErrorActionPreference = 'Stop'
+        # Use Continue for graceful error handling in try-catch blocks
+        $ErrorActionPreference = 'Continue'
         $env:TF_IN_AUTOMATION = "true"
         
         Write-Host "=== EXTRACTING TERRAFORM OUTPUTS FOR PIPELINE VARIABLES ===" -ForegroundColor Cyan
         Write-Host ""
         
+        # Track if we successfully extract required variables
+        $requiredVariablesExtracted = $true
+        
         # Extract connection strings for Function App deployment
         try {
           # REQUIRED: Cosmos DB connection string
           Write-Host "Extracting Cosmos DB connection string..." -ForegroundColor Yellow
-          $cosmosConnection = terraform output -raw cosmos_db_connection_string
+          $cosmosConnection = terraform output -raw cosmos_db_connection_string 2>$null
           if ([string]::IsNullOrWhiteSpace($cosmosConnection)) {
-            throw "Cosmos DB connection string is empty - this is required"
+            Write-Host "❌ ERROR: Cosmos DB connection string is empty - this is required" -ForegroundColor Red
+            $requiredVariablesExtracted = $false
+          } else {
+            Write-Host "✓ Cosmos DB connection string extracted" -ForegroundColor Green
+            Write-Host "##vso[task.setvariable variable=COSMOS_CONNECTION;isOutput=true;isSecret=true]$cosmosConnection"
           }
-          Write-Host "✓ Cosmos DB connection string extracted" -ForegroundColor Green
-          Write-Host "##vso[task.setvariable variable=COSMOS_CONNECTION;isOutput=true;isSecret=true]$cosmosConnection"
           
           # REQUIRED: Function App name for deployment
           Write-Host "Extracting Function App name..." -ForegroundColor Yellow
-          $functionAppName = terraform output -raw function_app_name
+          $functionAppName = terraform output -raw function_app_name 2>$null
           if ([string]::IsNullOrWhiteSpace($functionAppName)) {
-            throw "Function App name is empty - this is required for deployment"
+            Write-Host "❌ ERROR: Function App name is empty - this is required for deployment" -ForegroundColor Red
+            $requiredVariablesExtracted = $false
+          } else {
+            Write-Host "✓ Function App name extracted: $functionAppName" -ForegroundColor Green
+            Write-Host "##vso[task.setvariable variable=FUNCTION_APP_NAME;isOutput=true]$functionAppName"
           }
-          Write-Host "✓ Function App name extracted: $functionAppName" -ForegroundColor Green
-          Write-Host "##vso[task.setvariable variable=FUNCTION_APP_NAME;isOutput=true]$functionAppName"
           
           # OPTIONAL: Application Storage Account (for blob storage features)
           Write-Host "Checking for application Storage Account connection string..." -ForegroundColor Yellow
           try {
-            $blobConnection = terraform output -raw blob_storage_connection_string
+            $blobConnection = terraform output -raw blob_storage_connection_string 2>$null
             if (-not [string]::IsNullOrWhiteSpace($blobConnection)) {
               Write-Host "✓ Application Storage Account connection string extracted" -ForegroundColor Green
               Write-Host "##vso[task.setvariable variable=BLOB_CONNECTION;isOutput=true;isSecret=true]$blobConnection"
@@ -129,7 +137,7 @@ steps:
           # OPTIONAL: Redis Cache (for caching features)
           Write-Host "Checking for Redis Cache connection string..." -ForegroundColor Yellow
           try {
-            $redisConnection = terraform output -raw redis_connection_string
+            $redisConnection = terraform output -raw redis_connection_string 2>$null
             if (-not [string]::IsNullOrWhiteSpace($redisConnection)) {
               Write-Host "✓ Redis Cache connection string extracted" -ForegroundColor Green
               Write-Host "##vso[task.setvariable variable=REDIS_CONNECTION;isOutput=true;isSecret=true]$redisConnection"
@@ -143,6 +151,16 @@ steps:
             Write-Host "##vso[task.setvariable variable=HAS_REDIS_CACHE;isOutput=true]false"
           }
           
+          # Check if all required variables were extracted successfully
+          if (-not $requiredVariablesExtracted) {
+            Write-Host ""
+            Write-Host "❌ ERROR: Failed to extract required Terraform outputs" -ForegroundColor Red
+            Write-Host ""
+            Write-Host "Available Terraform outputs:" -ForegroundColor Yellow
+            terraform output
+            exit 1
+          }
+          
           Write-Host ""
           Write-Host "=== PIPELINE VARIABLES SET SUCCESSFULLY ===" -ForegroundColor Green
           Write-Host "✓ COSMOS_CONNECTION (sensitive) - REQUIRED" -ForegroundColor Green
@@ -153,12 +171,12 @@ steps:
           Write-Host "These variables are now available for the Function App deployment stage." -ForegroundColor Cyan
           
         } catch {
-          Write-Host "❌ ERROR: Failed to extract required Terraform outputs" -ForegroundColor Red
+          Write-Host "❌ ERROR: Unexpected error during Terraform output extraction" -ForegroundColor Red
           Write-Host "Error details: $($_.Exception.Message)" -ForegroundColor Red
           Write-Host ""
           Write-Host "Available Terraform outputs:" -ForegroundColor Yellow
           terraform output
-          throw "Pipeline variable extraction failed"
+          exit 1
         }
 
   # Generate Deployment Summary  
