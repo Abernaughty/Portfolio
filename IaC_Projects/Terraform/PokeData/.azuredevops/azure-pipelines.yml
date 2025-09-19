@@ -249,14 +249,14 @@ stages:
         dependsOn: DeployDev
         variables:
           # Required variables
-          COSMOS_DB_CONNECTION_STRING: $[stageDependencies.Deploy.DeployDev.outputs['DeployDev.setOutputs.COSMOS_CONNECTION']]
-          FUNCTION_APP_NAME: $[stageDependencies.Deploy.DeployDev.outputs['DeployDev.setOutputs.FUNCTION_APP_NAME']]
+          COSMOS_DB_CONNECTION_STRING: $[ dependencies.DeployDev.outputs['setOutputs.COSMOS_CONNECTION'] ]
+          FUNCTION_APP_NAME:           $[ dependencies.DeployDev.outputs['setOutputs.FUNCTION_APP_NAME'] ]
           
           # Optional variables (may be empty)
-          BLOB_STORAGE_CONNECTION_STRING: $[stageDependencies.Deploy.DeployDev.outputs['DeployDev.setOutputs.BLOB_CONNECTION']]
-          REDIS_CONNECTION_STRING: $[stageDependencies.Deploy.DeployDev.outputs['DeployDev.setOutputs.REDIS_CONNECTION']]
-          HAS_BLOB_STORAGE: $[stageDependencies.Deploy.DeployDev.outputs['DeployDev.setOutputs.HAS_BLOB_STORAGE']]
-          HAS_REDIS_CACHE: $[stageDependencies.Deploy.DeployDev.outputs['DeployDev.setOutputs.HAS_REDIS_CACHE']]
+          BLOB_STORAGE_CONNECTION_STRING: $[ dependencies.DeployDev.outputs['setOutputs.BLOB_CONNECTION'] ]
+          REDIS_CONNECTION_STRING:        $[ dependencies.DeployDev.outputs['setOutputs.REDIS_CONNECTION'] ]
+          HAS_BLOB_STORAGE:               $[ dependencies.DeployDev.outputs['setOutputs.HAS_BLOB_STORAGE'] ]
+          HAS_REDIS_CACHE:                $[ dependencies.DeployDev.outputs['setOutputs.HAS_REDIS_CACHE'] ]
         strategy:
           runOnce:
             deploy:
@@ -265,6 +265,7 @@ stages:
                   displayName: 'Verify Required Pipeline Variables'
                   inputs:
                     targetType: 'inline'
+                    pwsh: true
                     script: |
                       Write-Host "=== PIPELINE VARIABLE VERIFICATION ===" -ForegroundColor Cyan
                       Write-Host ""
@@ -299,6 +300,7 @@ stages:
                   name: buildAppSettings
                   inputs:
                     targetType: 'inline'
+                    pwsh: true
                     script: |
                       Write-Host "=== BUILDING DYNAMIC APP SETTINGS ===" -ForegroundColor Cyan
                       Write-Host ""

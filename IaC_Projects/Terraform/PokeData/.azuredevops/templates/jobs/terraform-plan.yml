@@ -39,6 +39,7 @@ steps:
     displayName: 'Generate Plan Summary'
     inputs:
       targetType: inline
+      pwsh: true
       workingDirectory: '${{ parameters.workingDirectory }}'
       script: |
         $ErrorActionPreference = 'Stop'

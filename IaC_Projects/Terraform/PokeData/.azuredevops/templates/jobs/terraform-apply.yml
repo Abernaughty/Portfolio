@@ -115,8 +115,8 @@ steps:
         if ($blob)    { Write-Host "##vso[task.setvariable variable=BLOB_CONNECTION;isOutput=true;isSecret=true]$blob" }
         if ($redis)   { Write-Host "##vso[task.setvariable variable=REDIS_CONNECTION;isOutput=true;isSecret=true]$redis" }
 
-        Write-Host "##vso[task.setvariable variable=HAS_BLOB_STORAGE;isOutput=true]$([bool]$blob)"
-        Write-Host "##vso[task.setvariable variable=HAS_REDIS_CACHE;isOutput=true]$([bool]$redis)"
+        Write-Host "##vso[task.setvariable variable=HAS_BLOB_STORAGE;isOutput=true]$(([bool]$blob).ToString().ToLower())"
+        Write-Host "##vso[task.setvariable variable=HAS_REDIS_CACHE;isOutput=true]$(([bool]$redis).ToString().ToLower())"
 
         if ($missing.Count -gt 0) {
           Write-Host "##vso[task.logissue type=error]Missing required outputs: $($missing -join ', ')"

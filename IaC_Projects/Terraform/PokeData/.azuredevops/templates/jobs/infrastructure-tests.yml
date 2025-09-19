@@ -297,6 +297,7 @@ steps:
     displayName: 'Test Summary'
     inputs:
       targetType: inline
+      pwsh: true
       script: |
         Write-Host "## Infrastructure Test Summary"
         Write-Host ""

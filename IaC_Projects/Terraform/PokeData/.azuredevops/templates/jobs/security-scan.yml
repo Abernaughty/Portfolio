@@ -14,6 +14,7 @@ steps:
     condition: eq(variables['Agent.OS'], 'Windows_NT')
     inputs:
       targetType: inline
+      pwsh: true
       script: |
         $ErrorActionPreference = 'Stop'
         $version = 'v1.28.6'
@@ -43,6 +44,7 @@ steps:
     condition: eq(variables['Agent.OS'], 'Windows_NT')
     inputs:
       targetType: inline
+      pwsh: true
       script: |
         $tfsec = "$(TFSEC_PATH)"
         if (-not (Test-Path $tfsec)) { throw "tfsec not found at $tfsec" }
