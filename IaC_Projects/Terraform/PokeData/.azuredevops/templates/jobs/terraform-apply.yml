@@ -85,6 +85,9 @@ steps:
       targetType: inline
       workingDirectory: ${{ parameters.workingDirectory }}
       script: |
+        # SMOKE: prove this step can emit pipeline output variables
+        Write-Host "##vso[task.setvariable variable=SMOKE;isOutput=true]ok"
+        
         $ErrorActionPreference = 'Stop'
         $env:TF_IN_AUTOMATION = 'true'
 
