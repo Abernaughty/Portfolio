@@ -119,34 +119,38 @@ steps:
           
           # OPTIONAL: Application Storage Account (for blob storage features)
           Write-Host "Checking for application Storage Account connection string..." -ForegroundColor Yellow
+          $blobConnection = $null
           try {
             $blobConnection = terraform output -raw blob_storage_connection_string 2>$null
-            if (-not [string]::IsNullOrWhiteSpace($blobConnection)) {
-              Write-Host "✓ Application Storage Account connection string extracted" -ForegroundColor Green
-              Write-Host "##vso[task.setvariable variable=BLOB_CONNECTION;isOutput=true;isSecret=true]$blobConnection"
-              Write-Host "##vso[task.setvariable variable=HAS_BLOB_STORAGE;isOutput=true]true"
-            } else {
-              Write-Host "⚠️ Application Storage Account connection string is empty - skipping" -ForegroundColor Yellow
-              Write-Host "##vso[task.setvariable variable=HAS_BLOB_STORAGE;isOutput=true]false"
-            }
+            if ($LASTEXITCODE -ne 0) { $blobConnection = $null }
           } catch {
+            $blobConnection = $null
+          }
+          
+          if (-not [string]::IsNullOrWhiteSpace($blobConnection)) {
+            Write-Host "✓ Application Storage Account connection string extracted" -ForegroundColor Green
+            Write-Host "##vso[task.setvariable variable=BLOB_CONNECTION;isOutput=true;isSecret=true]$blobConnection"
+            Write-Host "##vso[task.setvariable variable=HAS_BLOB_STORAGE;isOutput=true]true"
+          } else {
             Write-Host "⚠️ Application Storage Account not deployed - skipping blob storage configuration" -ForegroundColor Yellow
             Write-Host "##vso[task.setvariable variable=HAS_BLOB_STORAGE;isOutput=true]false"
           }
           
           # OPTIONAL: Redis Cache (for caching features)
           Write-Host "Checking for Redis Cache connection string..." -ForegroundColor Yellow
+          $redisConnection = $null
           try {
             $redisConnection = terraform output -raw redis_connection_string 2>$null
-            if (-not [string]::IsNullOrWhiteSpace($redisConnection)) {
-              Write-Host "✓ Redis Cache connection string extracted" -ForegroundColor Green
-              Write-Host "##vso[task.setvariable variable=REDIS_CONNECTION;isOutput=true;isSecret=true]$redisConnection"
-              Write-Host "##vso[task.setvariable variable=HAS_REDIS_CACHE;isOutput=true]true"
-            } else {
-              Write-Host "⚠️ Redis Cache connection string is empty - skipping" -ForegroundColor Yellow
-              Write-Host "##vso[task.setvariable variable=HAS_REDIS_CACHE;isOutput=true]false"
-            }
+            if ($LASTEXITCODE -ne 0) { $redisConnection = $null }
           } catch {
+            $redisConnection = $null
+          }
+          
+          if (-not [string]::IsNullOrWhiteSpace($redisConnection)) {
+            Write-Host "✓ Redis Cache connection string extracted" -ForegroundColor Green
+            Write-Host "##vso[task.setvariable variable=REDIS_CONNECTION;isOutput=true;isSecret=true]$redisConnection"
+            Write-Host "##vso[task.setvariable variable=HAS_REDIS_CACHE;isOutput=true]true"
+          } else {
             Write-Host "⚠️ Redis Cache not deployed - skipping cache configuration" -ForegroundColor Yellow
             Write-Host "##vso[task.setvariable variable=HAS_REDIS_CACHE;isOutput=true]false"
           }
