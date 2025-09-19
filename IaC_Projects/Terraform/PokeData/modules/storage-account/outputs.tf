@@ -56,11 +56,11 @@ output "containers" {
   description = "Map of created storage containers"
   value = {
     for k, v in azurerm_storage_container.containers : k => {
-      name         = v.name
-      id           = v.id
+      name                    = v.name
+      id                      = v.id
       has_immutability_policy = v.has_immutability_policy
-      has_legal_hold = v.has_legal_hold
-      resource_manager_id = v.resource_manager_id
+      has_legal_hold          = v.has_legal_hold
+      resource_manager_id     = v.resource_manager_id
     }
   }
 }
@@ -69,8 +69,8 @@ output "queues" {
   description = "Map of created storage queues"
   value = {
     for k, v in azurerm_storage_queue.queues : k => {
-      name = v.name
-      id   = v.id
+      name                = v.name
+      id                  = v.id
       resource_manager_id = v.resource_manager_id
     }
   }

@@ -1,7 +1,7 @@
 variable "storage_account_name" {
   description = "Name of the storage account. Must be globally unique and 3-24 characters long."
   type        = string
-  
+
   validation {
     condition     = can(regex("^[a-z0-9]{3,24}$", var.storage_account_name))
     error_message = "Storage account name must be 3-24 characters long and contain only lowercase letters and numbers."
@@ -22,7 +22,7 @@ variable "account_tier" {
   description = "Storage account tier (Standard or Premium)"
   type        = string
   default     = "Standard"
-  
+
   validation {
     condition     = contains(["Standard", "Premium"], var.account_tier)
     error_message = "Account tier must be either 'Standard' or 'Premium'."
@@ -33,7 +33,7 @@ variable "replication_type" {
   description = "Storage account replication type"
   type        = string
   default     = "LRS"
-  
+
   validation {
     condition     = contains(["LRS", "GRS", "RAGRS", "ZRS", "GZRS", "RAGZRS"], var.replication_type)
     error_message = "Replication type must be one of: LRS, GRS, RAGRS, ZRS, GZRS, RAGZRS."
@@ -44,7 +44,7 @@ variable "account_kind" {
   description = "Storage account kind"
   type        = string
   default     = "StorageV2"
-  
+
   validation {
     condition     = contains(["BlobStorage", "BlockBlobStorage", "FileStorage", "Storage", "StorageV2"], var.account_kind)
     error_message = "Account kind must be one of: BlobStorage, BlockBlobStorage, FileStorage, Storage, StorageV2."
@@ -79,7 +79,7 @@ variable "soft_delete_retention_days" {
   description = "Number of days to retain soft deleted blobs (0 to disable)"
   type        = number
   default     = 7
-  
+
   validation {
     condition     = var.soft_delete_retention_days >= 0 && var.soft_delete_retention_days <= 365
     error_message = "Soft delete retention days must be between 0 and 365."
@@ -90,7 +90,7 @@ variable "container_delete_retention_days" {
   description = "Number of days to retain soft deleted containers (0 to disable)"
   type        = number
   default     = 7
-  
+
   validation {
     condition     = var.container_delete_retention_days >= 0 && var.container_delete_retention_days <= 365
     error_message = "Container delete retention days must be between 0 and 365."
@@ -103,7 +103,7 @@ variable "containers" {
     access_type = string
   }))
   default = {}
-  
+
   validation {
     condition = alltrue([
       for container in var.containers : contains(["blob", "container", "private"], container.access_type)
