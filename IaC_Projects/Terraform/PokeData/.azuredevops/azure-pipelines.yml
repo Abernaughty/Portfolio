@@ -248,26 +248,29 @@ stages:
         environment: 'dev'
         dependsOn: DeployDev
         variables:
-          # Extract variables from the DeployDev job's setOutputs step
+          # Required variables
           COSMOS_DB_CONNECTION_STRING: $[stageDependencies.Deploy.DeployDev.outputs['DeployDev.setOutputs.COSMOS_CONNECTION']]
-          BLOB_STORAGE_CONNECTION_STRING: $[stageDependencies.Deploy.DeployDev.outputs['DeployDev.setOutputs.BLOB_CONNECTION']]
           FUNCTION_APP_NAME: $[stageDependencies.Deploy.DeployDev.outputs['DeployDev.setOutputs.FUNCTION_APP_NAME']]
-          STORAGE_ACCOUNT_NAME: $[stageDependencies.Deploy.DeployDev.outputs['DeployDev.setOutputs.STORAGE_ACCOUNT_NAME']]
+          
+          # Optional variables (may be empty)
+          BLOB_STORAGE_CONNECTION_STRING: $[stageDependencies.Deploy.DeployDev.outputs['DeployDev.setOutputs.BLOB_CONNECTION']]
+          REDIS_CONNECTION_STRING: $[stageDependencies.Deploy.DeployDev.outputs['DeployDev.setOutputs.REDIS_CONNECTION']]
+          HAS_BLOB_STORAGE: $[stageDependencies.Deploy.DeployDev.outputs['DeployDev.setOutputs.HAS_BLOB_STORAGE']]
+          HAS_REDIS_CACHE: $[stageDependencies.Deploy.DeployDev.outputs['DeployDev.setOutputs.HAS_REDIS_CACHE']]
         strategy:
           runOnce:
             deploy:
               steps:
                 - task: PowerShell@2
-                  displayName: 'Verify Pipeline Variables'
+                  displayName: 'Verify Required Pipeline Variables'
                   inputs:
                     targetType: 'inline'
                     script: |
                       Write-Host "=== PIPELINE VARIABLE VERIFICATION ===" -ForegroundColor Cyan
                       Write-Host ""
                       Write-Host "Function App Name: $(FUNCTION_APP_NAME)" -ForegroundColor Green
-                      Write-Host "Storage Account Name: $(STORAGE_ACCOUNT_NAME)" -ForegroundColor Green
                       
-                      # Verify sensitive variables are present (without exposing values)
+                      # Verify required variables are present (without exposing values)
                       if ([string]::IsNullOrWhiteSpace("$(COSMOS_DB_CONNECTION_STRING)")) {
                         Write-Host "❌ COSMOS_DB_CONNECTION_STRING is empty!" -ForegroundColor Red
                         exit 1
@@ -275,15 +278,60 @@ stages:
                         Write-Host "✓ COSMOS_DB_CONNECTION_STRING is available" -ForegroundColor Green
                       }
                       
-                      if ([string]::IsNullOrWhiteSpace("$(BLOB_STORAGE_CONNECTION_STRING)")) {
-                        Write-Host "❌ BLOB_STORAGE_CONNECTION_STRING is empty!" -ForegroundColor Red
-                        exit 1
+                      # Check optional variables
+                      if ("$(HAS_BLOB_STORAGE)" -eq "true") {
+                        Write-Host "✓ Blob Storage is available" -ForegroundColor Green
                       } else {
-                        Write-Host "✓ BLOB_STORAGE_CONNECTION_STRING is available" -ForegroundColor Green
+                        Write-Host "⚠️ Blob Storage is not available (optional)" -ForegroundColor Yellow
+                      }
+                      
+                      if ("$(HAS_REDIS_CACHE)" -eq "true") {
+                        Write-Host "✓ Redis Cache is available" -ForegroundColor Green
+                      } else {
+                        Write-Host "⚠️ Redis Cache is not available (optional)" -ForegroundColor Yellow
                       }
                       
                       Write-Host ""
-                      Write-Host "✅ All pipeline variables verified successfully!" -ForegroundColor Green
+                      Write-Host "✅ Required pipeline variables verified successfully!" -ForegroundColor Green
+
+                - task: PowerShell@2
+                  displayName: 'Build Dynamic App Settings'
+                  name: buildAppSettings
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      Write-Host "=== BUILDING DYNAMIC APP SETTINGS ===" -ForegroundColor Cyan
+                      Write-Host ""
+                      
+                      # Start with required settings
+                      $appSettings = @(
+                        "-COSMOS_DB_CONNECTION_STRING `"$(COSMOS_DB_CONNECTION_STRING)`""
+                        "-AzureWebJobsFeatureFlags EnableWorkerIndexing"
+                        "-WEBSITE_NODE_DEFAULT_VERSION ~22"
+                        "-POKEMON_TCG_API_BASE_URL https://api.pokemontcg.io/v2"
+                        "-POKEDATA_API_BASE_URL https://www.pokedata.io/v0"
+                      )
+                      
+                      # Add optional settings if available
+                      if ("$(HAS_BLOB_STORAGE)" -eq "true" -and -not [string]::IsNullOrWhiteSpace("$(BLOB_STORAGE_CONNECTION_STRING)")) {
+                        Write-Host "✓ Adding Blob Storage connection string" -ForegroundColor Green
+                        $appSettings += "-BLOB_STORAGE_CONNECTION_STRING `"$(BLOB_STORAGE_CONNECTION_STRING)`""
+                      } else {
+                        Write-Host "⚠️ Skipping Blob Storage connection string (not available)" -ForegroundColor Yellow
+                      }
+                      
+                      if ("$(HAS_REDIS_CACHE)" -eq "true" -and -not [string]::IsNullOrWhiteSpace("$(REDIS_CONNECTION_STRING)")) {
+                        Write-Host "✓ Adding Redis Cache connection string" -ForegroundColor Green
+                        $appSettings += "-REDIS_CONNECTION_STRING `"$(REDIS_CONNECTION_STRING)`""
+                      } else {
+                        Write-Host "⚠️ Skipping Redis Cache connection string (not available)" -ForegroundColor Yellow
+                      }
+                      
+                      # Join all settings
+                      $finalAppSettings = $appSettings -join " "
+                      Write-Host ""
+                      Write-Host "Final app settings: $finalAppSettings" -ForegroundColor Cyan
+                      Write-Host "##vso[task.setvariable variable=DYNAMIC_APP_SETTINGS;isOutput=true]$finalAppSettings"
                 
                 - task: DownloadBuildArtifacts@1
                   displayName: 'Download Function App artifact'
@@ -294,12 +342,12 @@ stages:
                     downloadPath: '$(System.ArtifactsDirectory)'
                 
                 - task: AzureFunctionApp@2
-                  displayName: 'Deploy Function App with All Environment Variables'
+                  displayName: 'Deploy Function App with Dynamic Environment Variables'
                   inputs:
                     azureSubscription: $(azureServiceConnection)
                     appName: '$(FUNCTION_APP_NAME)'
                     package: '$(System.ArtifactsDirectory)/functionapp/PokeDataFunc.zip'
-                    appSettings: '-COSMOS_DB_CONNECTION_STRING $(COSMOS_DB_CONNECTION_STRING) -BLOB_STORAGE_CONNECTION_STRING $(BLOB_STORAGE_CONNECTION_STRING) -AzureWebJobsFeatureFlags EnableWorkerIndexing -WEBSITE_NODE_DEFAULT_VERSION ~22 -POKEMON_TCG_API_BASE_URL https://api.pokemontcg.io/v2 -POKEDATA_API_BASE_URL https://www.pokedata.io/v0'
+                    appSettings: '$(buildAppSettings.DYNAMIC_APP_SETTINGS)'
 
 
   # Stage 5: Post-Deployment Tests
