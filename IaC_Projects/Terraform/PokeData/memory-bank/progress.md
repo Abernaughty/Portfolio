@@ -172,6 +172,19 @@
     - ✅ **Pipeline Ready**: Azure DevOps pipeline should now deploy successfully without "Parameter name cannot be empty" error
     - ⏳ **Next**: Monitor pipeline execution to confirm successful deployment
 
+### September 19, 2025 - Session 16
+18. **Pipeline Variable Reference Syntax Fix**
+    - ✅ **Issue Identified**: Pipeline variables (COSMOS_DB_CONNECTION_STRING, etc.) were empty due to incorrect variable reference syntax
+    - ✅ **Root Cause Analysis**: Two-part problem:
+      1. Original syntax missing job name prefix in output variable references
+      2. Incorrect fix using `stageDependencies` syntax for same-stage job dependencies
+    - ✅ **Microsoft Documentation Research**: Verified correct syntax for deployment jobs with `runOnce` strategy
+    - ✅ **Correct Syntax Applied**: Changed from `stageDependencies.Deploy.DeployDev.outputs['setOutputs.COSMOS_CONNECTION']` to `dependencies.DeployDev.outputs['DeployDev.setOutputs.COSMOS_CONNECTION']`
+    - ✅ **All 6 Variables Fixed**: COSMOS_CONNECTION, FUNCTION_APP_NAME, BLOB_CONNECTION, REDIS_CONNECTION, HAS_BLOB_STORAGE, HAS_REDIS_CACHE
+    - ✅ **Key Learning**: For deployment jobs with `runOnce` strategy, syntax requires job name prefix: `<job-name>.<step-name>.<variable-name>`
+    - ✅ **Documentation Created**: Comprehensive `pipeline-variable-reference-syntax-fix.md` with Microsoft documentation references
+    - ⏳ **Next**: Test complete pipeline with both PowerShell error handling and variable reference syntax fixes
+
 ## Current Status 🔄
 
 ### Infrastructure Status
