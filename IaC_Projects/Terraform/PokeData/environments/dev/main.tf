@@ -74,7 +74,7 @@ resource "azurerm_cosmosdb_sql_container" "cards" {
   resource_group_name   = azurerm_resource_group.main.name
   account_name          = module.cosmos_db.name
   database_name         = azurerm_cosmosdb_sql_database.pokemon_cards.name
-  partition_key_paths   = ["/setId"]  # Or whatever partition key your app needs
+  partition_key_paths   = ["/setId"] # Or whatever partition key your app needs
   partition_key_version = 1
 }
 
