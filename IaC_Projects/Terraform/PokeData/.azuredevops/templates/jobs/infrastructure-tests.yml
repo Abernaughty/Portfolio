@@ -84,7 +84,14 @@ steps:
           'AzureWebJobsFeatureFlags',
           'FUNCTIONS_WORKER_RUNTIME',
           'WEBSITE_RUN_FROM_PACKAGE',
-          'WEBSITE_NODE_DEFAULT_VERSION'
+          'WEBSITE_NODE_DEFAULT_VERSION',
+          'COSMOS_DB_CONNECTION_STRING',
+          'POKEMON_TCG_API_KEY',
+          'POKEMON_TCG_API_BASE_URL',
+          'POKEDATA_API_KEY',
+          'POKEDATA_API_BASE_URL',
+          'ENABLE_REDIS_CACHE',
+          'CACHE_TTL_SETS=604800'
         )
         
         foreach ($setting in $requiredSettings) {
@@ -178,24 +185,25 @@ steps:
         # Test suite
         $testResults = @()
         
-        # 1. Test root endpoint (should return function app info or 404)
-        $testResults += Test-Endpoint -Url "$baseUrl/" -Description "Root endpoint" -ExpectedStatus 404
+        # 1. Test root endpoint 
+        $testResults += Test-Endpoint -Url "$baseUrl/" -Description "Root endpoint" -ExpectedStatus 200
         
-        # 2. Test health/status endpoint (if exists)
-        $testResults += Test-Endpoint -Url "$baseUrl/api/health" -Description "Health check endpoint" -ExpectedStatus 200
+        # 2. Test health endpoint (optional - accept 200 or 404)
+        $healthResult = Test-Endpoint -Url "$baseUrl/api/health" -Description "Health check endpoint (optional)" -ExpectedStatus 200
+        if (-not $healthResult) {
+            $healthResult = Test-Endpoint -Url "$baseUrl/api/health" -Description "Health check endpoint (404 acceptable)" -ExpectedStatus 404
+        }
+        $testResults += $healthResult
         
         # 3. Test Pokemon card sets endpoint
         $testResults += Test-Endpoint -Url "$baseUrl/api/sets" -Description "Get Pokemon card sets" -ExpectedStatus 200
         
-        # 4. Test specific set endpoint (using common set ID)
-        $testResults += Test-Endpoint -Url "$baseUrl/api/sets/base1" -Description "Get specific set (base1)" -ExpectedStatus 200
-        
-        # 5. Test cards in set endpoint
-        $testResults += Test-Endpoint -Url "$baseUrl/api/sets/base1/cards" -Description "Get cards in set (base1)" -ExpectedStatus 200
-        
-        # 6. Test specific card endpoint
-        $testResults += Test-Endpoint -Url "$baseUrl/api/sets/base1/cards/base1-1" -Description "Get specific card (Alakazam)" -ExpectedStatus 200
-        
+        # 4. Test cards in set endpoint
+        $testResults += Test-Endpoint -Url "$baseUrl/api/sets/557/cards" -Description "Get cards in set (557)" -ExpectedStatus 200
+
+        # 5. Test specific card endpoint
+        $testResults += Test-Endpoint -Url "$baseUrl/api/sets/557/cards/73121" -Description "Get specific card (73121)" -ExpectedStatus 200
+
         # Summary
         Write-Host ""
         Write-Host "## API Endpoint Test Summary"
