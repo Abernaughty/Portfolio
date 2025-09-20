@@ -310,8 +310,16 @@ stages:
                         "-COSMOS_DB_CONNECTION_STRING `"$(COSMOS_DB_CONNECTION_STRING)`""
                         "-AzureWebJobsFeatureFlags EnableWorkerIndexing"
                         "-WEBSITE_NODE_DEFAULT_VERSION ~22"
+
+                        # External API Configuration
                         "-POKEMON_TCG_API_BASE_URL https://api.pokemontcg.io/v2"
+                        "-POKEMON_TCG_API_KEY `"$(POKEMON_TCG_API_KEY)`""
                         "-POKEDATA_API_BASE_URL https://www.pokedata.io/v0"
+                        "-POKEDATA_API_KEY `"$(POKEDATA_API_KEY)`""
+
+                        # Cache Configuration
+                        "-ENABLE_REDIS_CACHE false"
+                        "-CACHE_TTL_SETS 604800"
                       )
                       
                       # Add optional settings if available

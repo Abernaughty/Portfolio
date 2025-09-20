@@ -152,33 +152,3 @@ resource "azurerm_cosmosdb_account" "this" {
   # Tags
   tags = local.common_tags
 }
-
-# -----------------------------------------------------------------------------
-# SQL DATABASE (Optional - for demonstration)
-# Shows how to create a database within the Cosmos account
-# -----------------------------------------------------------------------------
-
-resource "azurerm_cosmosdb_sql_database" "example" {
-  count               = var.environment == "dev" ? 1 : 0 # Only create in dev for demo
-  name                = "pokemon-cards"
-  resource_group_name = var.resource_group_name
-  account_name        = azurerm_cosmosdb_account.this.name
-}
-
-# -----------------------------------------------------------------------------
-# SQL CONTAINER (Optional - for demonstration)
-# Shows how to create a container within the database
-# -----------------------------------------------------------------------------
-
-resource "azurerm_cosmosdb_sql_container" "example" {
-  count                 = var.environment == "dev" ? 1 : 0 # Only create in dev for demo
-  name                  = "cards"
-  resource_group_name   = var.resource_group_name
-  account_name          = azurerm_cosmosdb_account.this.name
-  database_name         = azurerm_cosmosdb_sql_database.example[0].name
-  partition_key_paths   = ["/id"] # Changed to array format for v4.40.0
-  partition_key_version = 1
-
-  # For serverless, we don't set throughput
-  # For provisioned, you would set: throughput = 400
-}

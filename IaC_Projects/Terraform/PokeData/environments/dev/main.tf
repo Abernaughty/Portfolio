@@ -61,6 +61,33 @@ module "cosmos_db" {
   tags = local.common_tags
 }
 
+# Pokemon Cards Database
+resource "azurerm_cosmosdb_sql_database" "pokemon_cards" {
+  name                = "PokemonCards"
+  resource_group_name = azurerm_resource_group.main.name
+  account_name        = module.cosmos_db.name
+}
+
+# Cards Container
+resource "azurerm_cosmosdb_sql_container" "cards" {
+  name                  = "Cards"
+  resource_group_name   = azurerm_resource_group.main.name
+  account_name          = module.cosmos_db.name
+  database_name         = azurerm_cosmosdb_sql_database.pokemon_cards.name
+  partition_key_paths   = ["/setId"]  # Or whatever partition key your app needs
+  partition_key_version = 1
+}
+
+# You could add more containers here:
+resource "azurerm_cosmosdb_sql_container" "sets" {
+  name                  = "Sets"
+  resource_group_name   = azurerm_resource_group.main.name
+  account_name          = module.cosmos_db.name
+  database_name         = azurerm_cosmosdb_sql_database.pokemon_cards.name
+  partition_key_paths   = ["/series"]
+  partition_key_version = 1
+}
+
 # Storage Account Module - REMOVED
 # The PokeData application doesn't currently use blob storage
 # This can be added back in the future when blob storage features are needed
@@ -100,7 +127,7 @@ module "function_app" {
   app_settings = {
     "CosmosDb__Endpoint"      = module.cosmos_db.endpoint
     "CosmosDb__Key"           = module.cosmos_db.primary_key
-    "CosmosDb__DatabaseName"  = "PokemonData"
+    "CosmosDb__DatabaseName"  = "PokemonCards"
     "CosmosDb__ContainerName" = "Cards"
   }
 
@@ -108,7 +135,8 @@ module "function_app" {
   cors_allowed_origins = [
     "http://localhost:3000",
     "http://localhost:4280",
-    "https://${module.static_web_app.default_host_name}"
+    "https://${module.static_web_app.default_host_name}",
+    "https://portal.azure.com"
   ]
 
   # Identity
