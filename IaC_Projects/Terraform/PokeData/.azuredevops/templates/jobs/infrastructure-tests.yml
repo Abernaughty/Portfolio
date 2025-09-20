@@ -91,7 +91,7 @@ steps:
           'POKEDATA_API_KEY',
           'POKEDATA_API_BASE_URL',
           'ENABLE_REDIS_CACHE',
-          'CACHE_TTL_SETS=604800'
+          'CACHE_TTL_SETS'
         )
         
         foreach ($setting in $requiredSettings) {
