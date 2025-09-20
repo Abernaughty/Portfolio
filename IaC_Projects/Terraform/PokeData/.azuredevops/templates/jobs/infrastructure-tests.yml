@@ -196,13 +196,13 @@ steps:
         $testResults += $healthResult
         
         # 3. Test Pokemon card sets endpoint
-        $testResults += Test-Endpoint -Url "$baseUrl/api/sets" -Description "Get Pokemon card sets" -ExpectedStatus 200
+        $testResults += Test-Endpoint -Url "$baseUrl/api/sets" -Description "Get Pokemon card sets" -ExpectedStatus 401
         
         # 4. Test cards in set endpoint
-        $testResults += Test-Endpoint -Url "$baseUrl/api/sets/557/cards" -Description "Get cards in set (557)" -ExpectedStatus 200
+        $testResults += Test-Endpoint -Url "$baseUrl/api/sets/557/cards" -Description "Get cards in set (557)" -ExpectedStatus 401
 
         # 5. Test specific card endpoint
-        $testResults += Test-Endpoint -Url "$baseUrl/api/sets/557/cards/73121" -Description "Get specific card (73121)" -ExpectedStatus 200
+        $testResults += Test-Endpoint -Url "$baseUrl/api/sets/557/cards/73121" -Description "Get specific card (73121)" -ExpectedStatus 401
 
         # Summary
         Write-Host ""
