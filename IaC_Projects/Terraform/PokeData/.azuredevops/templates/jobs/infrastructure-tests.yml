@@ -45,11 +45,11 @@ steps:
         $ENDPOINT = (az cosmosdb show --name $COSMOS_NAME --resource-group $RG_NAME --query documentEndpoint -o tsv).Trim()
         Write-Host "Endpoint: $ENDPOINT"
 
-        az cosmosdb sql database show --account-name $COSMOS_NAME --name "pokemon-cards" --resource-group $RG_NAME | Out-Null
+        az cosmosdb sql database show --account-name $COSMOS_NAME --name "PokemonCards" --resource-group $RG_NAME | Out-Null
         if ($LASTEXITCODE -eq 0) {
-          Write-Host "✅ Database 'pokemon-cards' exists"
+          Write-Host "✅ Database 'PokemonCards' exists"
         } else {
-          Write-Host "⚠️ Database 'pokemon-cards' not found"
+          Write-Host "⚠️ Database 'PokemonCards' not found"
         }
 
   - task: AzureCLI@2
