@@ -75,17 +75,6 @@ output "location" {
   value       = azurerm_cosmosdb_account.this.location
 }
 
-# Database and container info (if created)
-output "database_name" {
-  description = "The name of the example database (if created in dev)"
-  value       = var.environment == "dev" ? azurerm_cosmosdb_sql_database.example[0].name : null
-}
-
-output "container_name" {
-  description = "The name of the example container (if created in dev)"
-  value       = var.environment == "dev" ? azurerm_cosmosdb_sql_container.example[0].name : null
-}
-
 # Useful for other modules
 output "resource_group_name" {
   description = "The resource group name where Cosmos DB is deployed"
