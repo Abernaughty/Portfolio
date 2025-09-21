@@ -185,6 +185,23 @@
     - ✅ **Documentation Created**: Comprehensive `pipeline-variable-reference-syntax-fix.md` with Microsoft documentation references
     - ⏳ **Next**: Test complete pipeline with both PowerShell error handling and variable reference syntax fixes
 
+### September 20, 2025 - Session 21
+19. **Terraform Validation Errors Resolution**
+    - ✅ **Issue 1 - Missing Variable Declarations**: Added missing `pokemon_tcg_api_key` and `pokedata_api_key` variable declarations to `environments/dev/variables.tf`
+    - ✅ **Issue 2 - Incorrect Cosmos DB Output Reference**: Fixed `module.cosmos_db.connection_string` → `module.cosmos_db.primary_sql_connection_string` in main.tf
+    - ✅ **Root Cause Analysis**: 
+      1. Terraform requires explicit variable declarations even when values come from pipeline variable groups
+      2. Azure Provider 4.x removed `connection_strings` attribute, requiring manual construction
+    - ✅ **Impact Assessment**: Minimal changes needed due to smart architecture with abstraction layers
+    - ✅ **Files Modified**: Only 2 files required updates:
+      - `environments/dev/variables.tf`: Added API key variable declarations with `sensitive = true`
+      - `environments/dev/main.tf`: Updated Cosmos DB output reference
+    - ✅ **Pipeline Compatibility**: No pipeline changes needed - environment outputs already correct
+    - ✅ **Documentation Created**: 
+      - `terraform-variable-declarations-fix.md`: Variable declaration solution
+      - `cosmos-db-output-reference-fix.md`: Output reference solution with technical patterns
+    - ✅ **Pure Terraform Approach Complete**: All validation errors resolved, configuration drift eliminated
+
 ## Current Status 🔄
 
 ### Infrastructure Status

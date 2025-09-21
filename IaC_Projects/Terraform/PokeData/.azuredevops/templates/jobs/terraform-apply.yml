@@ -32,6 +32,8 @@ steps:
       backendAzureRmKey: 'pokedata/${{ parameters.environment }}.tfstate'
     env:
       TF_VAR_repository_token: $(github_token)   # secret from variable group / Key Vault
+      TF_VAR_pokemon_tcg_api_key: $(pokemon_tcg_api_key)
+      TF_VAR_pokedata_api_key: $(pokedata_api_key)
 
   # Pull the saved plan artifact produced in the Plan stage
   - task: DownloadBuildArtifacts@1
@@ -73,6 +75,8 @@ steps:
       environmentServiceNameAzureRM: '$(azureServiceConnection)'
     env:
       TF_VAR_repository_token: $(github_token)
+      TF_VAR_pokemon_tcg_api_key: $(pokemon_tcg_api_key)
+      TF_VAR_pokedata_api_key: $(pokedata_api_key)
 
   # Extract Terraform Outputs as Pipeline Variables
   - task: PowerShell@2
@@ -80,6 +84,8 @@ steps:
     name: setOutputs             # <-- required to reference output vars
     env:
       TF_VAR_repository_token: $(github_token)
+      TF_VAR_pokemon_tcg_api_key: $(pokemon_tcg_api_key)
+      TF_VAR_pokedata_api_key: $(pokedata_api_key)
     inputs:
       pwsh: true
       targetType: inline
@@ -212,6 +218,8 @@ steps:
     displayName: 'Generate Deployment Summary'
     env:
       TF_VAR_repository_token: $(github_token)
+      TF_VAR_pokemon_tcg_api_key: $(pokemon_tcg_api_key)
+      TF_VAR_pokedata_api_key: $(pokedata_api_key)
     inputs:
       pwsh: true
       targetType: inline

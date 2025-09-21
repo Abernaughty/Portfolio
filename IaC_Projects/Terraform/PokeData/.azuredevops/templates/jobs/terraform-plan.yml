@@ -19,6 +19,8 @@ steps:
       backendAzureRmKey: 'pokedata/${{ parameters.environment }}.tfstate'
     env:
       TF_VAR_repository_token: $(github_token)   # secret var from ADO group/Key Vault
+      TF_VAR_pokemon_tcg_api_key: $(pokemon_tcg_api_key)
+      TF_VAR_pokedata_api_key: $(pokedata_api_key)
 
   - task: TerraformTaskV4@4
     displayName: 'Terraform Plan'
@@ -32,6 +34,8 @@ steps:
       publishPlanResults: 'tfplan-${{ parameters.environment }}'
     env:
       TF_VAR_repository_token: $(github_token)
+      TF_VAR_pokemon_tcg_api_key: $(pokemon_tcg_api_key)
+      TF_VAR_pokedata_api_key: $(pokedata_api_key)
     # Let exit code 2 (changes) pass; the task reports nonzero -> don't fail the job
     continueOnError: true
 
@@ -77,6 +81,8 @@ steps:
         Write-Host "Wrote plan-summary.md, tfplan.txt, tfplan.json"
     env:
       TF_VAR_repository_token: $(github_token)
+      TF_VAR_pokemon_tcg_api_key: $(pokemon_tcg_api_key)
+      TF_VAR_pokedata_api_key: $(pokedata_api_key)
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Terraform Plan'
