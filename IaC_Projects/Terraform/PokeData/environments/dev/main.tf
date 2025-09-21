@@ -126,7 +126,7 @@ module "function_app" {
   # Application settings - All configuration managed by Terraform
   app_settings = {
     # Core Cosmos DB connection (the one actually used by the application)
-    "COSMOS_DB_CONNECTION_STRING" = module.cosmos_db.connection_string
+    "COSMOS_DB_CONNECTION_STRING" = module.cosmos_db.primary_sql_connection_string
 
     # External API configurations
     "POKEMON_TCG_API_BASE_URL" = "https://api.pokemontcg.io/v2"
