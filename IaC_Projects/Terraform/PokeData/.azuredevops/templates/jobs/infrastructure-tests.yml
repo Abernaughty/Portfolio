@@ -155,7 +155,7 @@ steps:
           
           for ($i = 1; $i -le $MaxRetries; $i++) {
             try {
-              $response = Invoke-WebRequest -Uri $Url -Method GET -TimeoutSec 30 -UseBasicParsing
+              $response = Invoke-WebRequest -Uri $Url -Method GET -TimeoutSec 30 -UseBasicParsing -SkipHttpErrorCheck
               $statusCode = [int]$response.StatusCode
               
               if ($ExpectedStatus -contains $statusCode) {
