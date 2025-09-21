@@ -74,7 +74,7 @@ resource "azurerm_cosmosdb_sql_container" "cards" {
   resource_group_name   = azurerm_resource_group.main.name
   account_name          = module.cosmos_db.name
   database_name         = azurerm_cosmosdb_sql_database.pokemon_cards.name
-  partition_key_paths   = ["/setId"] # Or whatever partition key your app needs
+  partition_key_paths   = ["/setId"]  # Or whatever partition key your app needs
   partition_key_version = 1
 }
 
@@ -123,12 +123,24 @@ module "function_app" {
   # Dev uses consumption plan
   # The module will automatically select the right SKU based on environment
 
-  # Application settings - Node.js runtime is hardcoded in module
+  # Application settings - All configuration managed by Terraform
   app_settings = {
-    "CosmosDb__Endpoint"      = module.cosmos_db.endpoint
-    "CosmosDb__Key"           = module.cosmos_db.primary_key
-    "CosmosDb__DatabaseName"  = "PokemonCards"
-    "CosmosDb__ContainerName" = "Cards"
+    # Core Cosmos DB connection (the one actually used by the application)
+    "COSMOS_DB_CONNECTION_STRING" = module.cosmos_db.connection_string
+    
+    # External API configurations
+    "POKEMON_TCG_API_BASE_URL"    = "https://api.pokemontcg.io/v2"
+    "POKEMON_TCG_API_KEY"         = var.pokemon_tcg_api_key
+    "POKEDATA_API_BASE_URL"       = "https://www.pokedata.io/v0"
+    "POKEDATA_API_KEY"            = var.pokedata_api_key
+    
+    # Application settings
+    "ENABLE_REDIS_CACHE"          = "false"
+    "CACHE_TTL_SETS"              = "604800"
+    
+    # Critical runtime settings (previously managed by pipeline)
+    "AzureWebJobsFeatureFlags"    = "EnableWorkerIndexing"
+    "WEBSITE_NODE_DEFAULT_VERSION" = "~22"
   }
 
   # CORS settings for dev
