@@ -132,6 +132,19 @@ variable "backup_retention_days" {
   default     = 7 # Minimal for dev
 }
 
+# External API Configuration
+variable "pokemon_tcg_api_key" {
+  description = "API key for Pokemon TCG API"
+  type        = string
+  sensitive   = true
+}
+
+variable "pokedata_api_key" {
+  description = "API key for PokeData API"
+  type        = string
+  sensitive   = true
+}
+
 # Infrastructure Metadata
 variable "created_date" {
   description = "Date when the infrastructure was first created (format: YYYY-MM-DD)"
