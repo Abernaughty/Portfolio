@@ -36,3 +36,6 @@ echo "📍 Azurite Blob: http://localhost:10000"
 
 # Ensure .devcontainer/local.env exists
 [ -f .devcontainer/local.env ] || cp .devcontainer/local.env.example .devcontainer/local.env
+
+# Ensure .devcontainer/local.env exists
+[ -f .devcontainer/local.env ] || cp .devcontainer/local.env.example .devcontainer/local.env
