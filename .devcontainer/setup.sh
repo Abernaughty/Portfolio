@@ -27,8 +27,8 @@ echo "🗄️ Initializing Cosmos DB emulator..."
 
 # Verify emulator connectivity
 echo "✅ Verifying emulator connectivity..."
-curl -k https://localhost:8081/_explorer/emulator.pem > ~/cosmos_emulator.pem
-curl http://localhost:10000/devstoreaccount1?comp=properties
+curl -k https://cosmosdb-emulator:8081/_explorer/emulator.pem > ~/cosmos_emulator.pem
+curl -v http://azurite:10000/devstoreaccount1/ | head
 
 echo "🎉 Development environment ready!"
 echo "📍 Cosmos DB Explorer: https://localhost:8081/_explorer/index.html"

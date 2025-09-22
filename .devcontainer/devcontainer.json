@@ -70,7 +70,8 @@
         "ms-vscode.remote-containers",
         "ms-vscode.remote-repositories",
         "eamodio.gitlens",
-        "streetsidesoftware.code-spell-checker"
+        "streetsidesoftware.code-spell-checker",
+        "saoudrizwan.claude-dev"
       ],
       
       "settings": {
